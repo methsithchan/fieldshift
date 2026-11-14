@@ -23,7 +23,7 @@ export default function TemperatureChart({ data }: TemperatureChartProps) {
           Monthly Mean Temperature (°C)
         </h3>
         <p className="text-xs text-gray-500">
-          10-year monthly mean daily 2-meter air temperature (NASA POWER: T2M)
+          11-year monthly mean daily 2-meter air temperature (NASA POWER: T2M)
         </p>
       </div>
 

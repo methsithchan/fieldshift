@@ -44,29 +44,29 @@ export interface MonthlyClimatology {
   monthIndex: number; // 0-11
   monthNumber: number; // 1-12
   monthName: string; // "Jan", "Feb", etc.
-  avgMonthlyRainfallMm: number; // average total precipitation for that month across years
-  avgTemperatureC: number; // mean temperature for that month across years
-  avgSoilWetness: number; // mean GWETROOT (0-1) across years
-  avgRelativeHumidity: number; // mean RH2M (%) across years
+  avgMonthlyRainfallMm: number | null; // average total precipitation for that month across years, null if no valid data
+  avgTemperatureC: number | null; // mean temperature for that month across years, null if no valid data
+  avgSoilWetness: number | null; // mean GWETROOT (0-1) across years, null if no valid data
+  avgRelativeHumidity: number | null; // mean RH2M (%) across years, null if no valid data
   validDaysCount: number;
   missingDaysCount: number;
 }
 
 export interface SeasonalSummary {
-  // Maha season: typically October through February (major cultivation season in Sri Lanka dry zone)
-  mahaRainfallMm: number;
-  mahaAvgTempC: number;
-  mahaAvgSoilWetness: number;
+  // Maha season: October through March (FAO Sri Lanka Crop Calendar)
+  mahaRainfallMm: number | null;
+  mahaAvgTempC: number | null;
+  mahaAvgSoilWetness: number | null;
 
-  // Yala season: typically April through August (minor/dry cultivation season in Sri Lanka dry zone)
-  yalaRainfallMm: number;
-  yalaAvgTempC: number;
-  yalaAvgSoilWetness: number;
+  // Yala season: April through September (FAO Sri Lanka Crop Calendar)
+  yalaRainfallMm: number | null;
+  yalaAvgTempC: number | null;
+  yalaAvgSoilWetness: number | null;
 
   // Annual
-  annualRainfallMm: number;
-  annualAvgTempC: number;
-  annualAvgSoilWetness: number;
+  annualRainfallMm: number | null;
+  annualAvgTempC: number | null;
+  annualAvgSoilWetness: number | null;
 }
 
 export interface DailySampleRecord {

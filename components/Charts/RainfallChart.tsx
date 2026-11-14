@@ -23,7 +23,7 @@ export default function RainfallChart({ data }: RainfallChartProps) {
           Monthly Rainfall Totals (mm)
         </h3>
         <p className="text-xs text-gray-500">
-          10-year multi-year average monthly precipitation (NASA POWER: PRECTOTCORR)
+          11-year multi-year average monthly precipitation (NASA POWER: PRECTOTCORR)
         </p>
       </div>
 

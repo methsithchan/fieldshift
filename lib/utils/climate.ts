@@ -162,32 +162,40 @@ export function processNasaClimateData(
 
     const avgRainfall =
       monthlyRainfallTotals.length > 0
-        ? monthlyRainfallTotals.reduce((a, b) => a + b, 0) / monthlyRainfallTotals.length
-        : 0;
+        ? Number(
+            (
+              monthlyRainfallTotals.reduce((a, b) => a + b, 0) / monthlyRainfallTotals.length
+            ).toFixed(1)
+          )
+        : null;
 
     const avgTemp =
       monthlyAvgTemps.length > 0
-        ? monthlyAvgTemps.reduce((a, b) => a + b, 0) / monthlyAvgTemps.length
-        : 0;
+        ? Number(
+            (monthlyAvgTemps.reduce((a, b) => a + b, 0) / monthlyAvgTemps.length).toFixed(1)
+          )
+        : null;
 
     const avgGwet =
       monthlyAvgGwets.length > 0
-        ? monthlyAvgGwets.reduce((a, b) => a + b, 0) / monthlyAvgGwets.length
-        : 0;
+        ? Number(
+            (monthlyAvgGwets.reduce((a, b) => a + b, 0) / monthlyAvgGwets.length).toFixed(3)
+          )
+        : null;
 
     const avgRh =
       monthlyAvgRhs.length > 0
-        ? monthlyAvgRhs.reduce((a, b) => a + b, 0) / monthlyAvgRhs.length
-        : 0;
+        ? Number((monthlyAvgRhs.reduce((a, b) => a + b, 0) / monthlyAvgRhs.length).toFixed(1))
+        : null;
 
     climatology.push({
       monthIndex: m,
       monthNumber: m + 1,
       monthName: MONTH_NAMES[m],
-      avgMonthlyRainfallMm: Number(avgRainfall.toFixed(1)),
-      avgTemperatureC: Number(avgTemp.toFixed(1)),
-      avgSoilWetness: Number(avgGwet.toFixed(3)),
-      avgRelativeHumidity: Number(avgRh.toFixed(1)),
+      avgMonthlyRainfallMm: avgRainfall,
+      avgTemperatureC: avgTemp,
+      avgSoilWetness: avgGwet,
+      avgRelativeHumidity: avgRh,
       validDaysCount: validDays,
       missingDaysCount: missingDays,
     });
@@ -198,48 +206,61 @@ export function processNasaClimateData(
   const yalaConfig = CULTIVATION_SEASONS.find((s) => s.id === "yala");
 
   // Convert 1-indexed months (1-12) to 0-indexed month indices (0-11)
-  const mahaMonthIndices = (mahaConfig?.months ?? [10, 11, 12, 1, 2]).map((m) => m - 1);
-  const yalaMonthIndices = (yalaConfig?.months ?? [4, 5, 6, 7, 8]).map((m) => m - 1);
+  const mahaMonthIndices = (mahaConfig?.months ?? [10, 11, 12, 1, 2, 3]).map((m) => m - 1);
+  const yalaMonthIndices = (yalaConfig?.months ?? [4, 5, 6, 7, 8, 9]).map((m) => m - 1);
 
-  const mahaRainfall = mahaMonthIndices.reduce((sum, m) => sum + climatology[m].avgMonthlyRainfallMm, 0);
-  const mahaTemp =
-    mahaMonthIndices.length > 0
-      ? mahaMonthIndices.reduce((sum, m) => sum + climatology[m].avgTemperatureC, 0) / mahaMonthIndices.length
-      : 0;
-  const mahaSoilWetness =
-    mahaMonthIndices.length > 0
-      ? mahaMonthIndices.reduce((sum, m) => sum + climatology[m].avgSoilWetness, 0) / mahaMonthIndices.length
-      : 0;
+  // Helper for summing nullable numbers
+  const sumNullable = (indices: number[], getter: (c: MonthlyClimatology) => number | null): number | null => {
+    let sum = 0;
+    let count = 0;
+    for (const idx of indices) {
+      const v = getter(climatology[idx]);
+      if (v !== null) {
+        sum += v;
+        count++;
+      }
+    }
+    return count > 0 ? Number(sum.toFixed(1)) : null;
+  };
 
-  const yalaRainfall = yalaMonthIndices.reduce((sum, m) => sum + climatology[m].avgMonthlyRainfallMm, 0);
-  const yalaTemp =
-    yalaMonthIndices.length > 0
-      ? yalaMonthIndices.reduce((sum, m) => sum + climatology[m].avgTemperatureC, 0) / yalaMonthIndices.length
-      : 0;
-  const yalaSoilWetness =
-    yalaMonthIndices.length > 0
-      ? yalaMonthIndices.reduce((sum, m) => sum + climatology[m].avgSoilWetness, 0) / yalaMonthIndices.length
-      : 0;
+  const avgNullable = (indices: number[], getter: (c: MonthlyClimatology) => number | null, decimals = 1): number | null => {
+    let sum = 0;
+    let count = 0;
+    for (const idx of indices) {
+      const v = getter(climatology[idx]);
+      if (v !== null) {
+        sum += v;
+        count++;
+      }
+    }
+    return count > 0 ? Number((sum / count).toFixed(decimals)) : null;
+  };
 
-  // Annual
-  const annualRainfall = climatology.reduce((sum, c) => sum + c.avgMonthlyRainfallMm, 0);
-  const annualAvgTemp =
-    climatology.reduce((sum, c) => sum + c.avgTemperatureC, 0) / climatology.length;
-  const annualAvgSoilWetness =
-    climatology.reduce((sum, c) => sum + c.avgSoilWetness, 0) / climatology.length;
+  const mahaRainfall = sumNullable(mahaMonthIndices, (c) => c.avgMonthlyRainfallMm);
+  const mahaTemp = avgNullable(mahaMonthIndices, (c) => c.avgTemperatureC, 1);
+  const mahaSoilWetness = avgNullable(mahaMonthIndices, (c) => c.avgSoilWetness, 3);
+
+  const yalaRainfall = sumNullable(yalaMonthIndices, (c) => c.avgMonthlyRainfallMm);
+  const yalaTemp = avgNullable(yalaMonthIndices, (c) => c.avgTemperatureC, 1);
+  const yalaSoilWetness = avgNullable(yalaMonthIndices, (c) => c.avgSoilWetness, 3);
+
+  const allIndices = Array.from({ length: 12 }, (_, i) => i);
+  const annualRainfall = sumNullable(allIndices, (c) => c.avgMonthlyRainfallMm);
+  const annualAvgTemp = avgNullable(allIndices, (c) => c.avgTemperatureC, 1);
+  const annualAvgSoilWetness = avgNullable(allIndices, (c) => c.avgSoilWetness, 3);
 
   const seasonalSummary: SeasonalSummary = {
-    mahaRainfallMm: Number(mahaRainfall.toFixed(1)),
-    mahaAvgTempC: Number(mahaTemp.toFixed(1)),
-    mahaAvgSoilWetness: Number(mahaSoilWetness.toFixed(3)),
+    mahaRainfallMm: mahaRainfall,
+    mahaAvgTempC: mahaTemp,
+    mahaAvgSoilWetness: mahaSoilWetness,
 
-    yalaRainfallMm: Number(yalaRainfall.toFixed(1)),
-    yalaAvgTempC: Number(yalaTemp.toFixed(1)),
-    yalaAvgSoilWetness: Number(yalaSoilWetness.toFixed(3)),
+    yalaRainfallMm: yalaRainfall,
+    yalaAvgTempC: yalaTemp,
+    yalaAvgSoilWetness: yalaSoilWetness,
 
-    annualRainfallMm: Number(annualRainfall.toFixed(1)),
-    annualAvgTempC: Number(annualAvgTemp.toFixed(1)),
-    annualAvgSoilWetness: Number(annualAvgSoilWetness.toFixed(3)),
+    annualRainfallMm: annualRainfall,
+    annualAvgTempC: annualAvgTemp,
+    annualAvgSoilWetness: annualAvgSoilWetness,
   };
 
   return {

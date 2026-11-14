@@ -3,15 +3,18 @@ import { CropDefinition } from "@/lib/types/crops";
 /**
  * Crop catalog for Sri Lanka Dry and Intermediate Zones.
  *
- * CRITICAL METHODOLOGICAL NOTES:
- * 1. Water figures measure fundamentally DIFFERENT agronomic bases:
- *    - Rice measures 'total requirement' including puddling, percolation, and seepage.
- *    - Legumes measure 'crop water use' (consumptive ET).
- *    The rotation engine MUST NOT compare water need directly across different bases.
- * 2. Maize and Black Gram water needs are left null; confidence degrades gracefully.
- * 3. All agronomic figures are Dry Zone research station values (primarily Field Crops
- *    Research and Development Institute / Rice R&D Institute at Mahailluppallama),
- *    and do NOT represent plot-scale guarantees for Padaviya.
+ * RIGOROUS SOURCING RULES:
+ * Only permitted research citations:
+ *  - Rice water requirement: DOA / RRDI Mahailluppallama (948–1,232 mm)
+ *  - Green gram water requirement: Annals of the Sri Lanka Department of Agriculture (2014) (228 mm Maha, 270 mm Yala)
+ *  - Cowpea water requirement: Liyanage (1992) (175–288 mm)
+ *  - Cowpea temperature (20–30°C), duration (75–90 d), waterlogging sensitivity, no continuous cowpea: DOA RARDC Kilinochchi
+ *  - Black gram MI-1 duration (80–90 d), temperature (25–35°C): Secondary copy of Sri Lanka DOA text - unverified primary source
+ *  - Maize duration (105–110 d): Karunaratne (2006)
+ *  - Rice maturity classes: Illangakoon et al. (Bg 352 is ~96 days short)
+ *  - Ministry of Agriculture 2024/25 seasonal area targets
+ *  - Legume nitrogen fixation: general knowledge - not sourced
+ *  - Waterlogging and continuous cropping: "unverified" unless explicitly sourced above.
  */
 
 export const CROPS: Record<string, CropDefinition> = {
@@ -22,46 +25,45 @@ export const CROPS: Record<string, CropDefinition> = {
     botanicalName: "Oryza sativa",
     seasons: ["maha", "yala"],
     seasonalityNotes:
-      "Grown in both Maha and Yala under tank irrigation or rainfed conditions. Maha provides highest natural rainfall; Yala frequently faces severe irrigation deficits in Dry Zone command areas.",
+      "Cultivated in both Maha and Yala seasons under irrigation or rainfed lowland conditions.",
+    seasonalitySource: "general knowledge - not sourced",
 
     waterNeed: {
       value: [948, 1232],
       basis: "total requirement",
       unit: "mm/season",
       soilContext:
-        "Mahailluppallama experiments: 948–1,057 mm for 3-month crops and 1,128–1,232 mm for 4-month crops across Low Humic Gley (LHG) and imperfectly drained Reddish Brown Earth (RBE) soils.",
-      source:
-        "Sri Lanka Department of Agriculture (DOA) / Rice Research and Development Institute (RRDI) Mahailluppallama experimental trials. Supplementary irrigation requirement study indicates 597–1,000 mm in Maha vs 1,200–1,300 mm in Yala.",
+        "Mahailluppallama trials: 948–1,057 mm for 3-month crops and 1,128–1,232 mm for 4-month crops across soil types.",
+      source: "DOA / RRDI Mahailluppallama",
       notes:
-        "CRITICAL: Includes land soaking, puddling, standing water evaporation, and deep percolation losses. Not comparable to crop-only evapotranspiration figures of upland crops.",
+        "Total requirement includes land preparation (soaking/puddling), standing water maintenance, and seepage/percolation. Not comparable to crop water use of upland crops.",
     },
 
     maturity: {
       daysRange: [85, 135],
       varietyClasses:
-        "Ultra-short (<90d, e.g. Bg 250), Short (90–99d, e.g. Bg 300, At 306), Medium (100–109d, e.g. Bg 352, Bw 367), Long (110–135d, e.g. Bg 403). Maturity is typically 1–6 days shorter in Maha than in Yala.",
-      source: "Sri Lanka Department of Agriculture (DOA) varietal releases and crop calendar.",
-      notes: "Farmers select short-duration varieties (3 months) for water-scarce Yala seasons.",
+        "Maturity classes (Illangakoon et al.): ultra-short (<90 days, e.g. Bg 250), short (90–99 days, e.g. Bg 300, Bg 352 ~96d), medium (100–109 days), long (110–135 days).",
+      source: "Illangakoon et al.",
+      notes: "Maturity duration is reported 1–6 days shorter in Maha than in Yala.",
     },
 
     nitrogenFixing: false,
-    nitrogenFixingSource: "General botanical knowledge (Poaceae family / non-legume).",
+    nitrogenFixingSource: "general knowledge - not sourced",
 
     waterloggingSensitivity: "tolerant",
-    waterloggingSource: "General agronomic knowledge (adapted to flooded/anaerobic conditions via aerenchyma).",
+    waterloggingSource: "general knowledge - not sourced",
 
-    continuousCroppingRisk: false, // Traditional continuous wetland paddy exists, but increases pest build-up and groundwater methane
-    continuousCroppingSource: "DOA agronomy guides; continuous mono-cropping increases brown planthopper and blast pressure.",
+    continuousCroppingRisk: "unverified",
+    continuousCroppingSource: "unverified",
 
-    optimalTemperatureRangeC: [25, 33],
-    temperatureSource: "DOA Rice Agronomy Handbook.",
+    optimalTemperatureRangeC: null,
+    temperatureSource: "unverified",
 
     soilImpactSummary:
-      "Continuous flooded paddy can degrade soil structure over time and leach mobile nutrients; puddling creates a hard plow pan that limits subsequent upland root penetration.",
-    soilImpactSource: "FAO / DOA Soil Science Division, Mahailluppallama.",
+      "Flooded paddy puddling forms a dense plow pan; standing water leaches soluble nutrients.",
+    soilImpactSource: "general knowledge - not sourced",
 
-    researchStationContext:
-      "Mahailluppallama Field Crops & Rice R&D Institutes. Dry Zone station benchmark.",
+    researchStationContext: "DOA / RRDI Mahailluppallama research station trials.",
   },
 
   green_gram: {
@@ -71,48 +73,41 @@ export const CROPS: Record<string, CropDefinition> = {
     botanicalName: "Vigna radiata",
     seasons: ["yala", "maha"],
     seasonalityNotes:
-      "Widely cultivated in Yala on residual paddy moisture and in rainfed uplands during early/late rains. DOA actively promotes third-season cultivation immediately following Yala paddy.",
+      "Cultivated in Yala and Maha. Promoted for short-window cultivation following paddy.",
+    seasonalitySource: "Ministry of Agriculture Sri Lanka 2024/25 seasonal targets",
 
     waterNeed: {
       value: [228, 270],
       basis: "crop water use",
       unit: "mm/season",
-      soilContext:
-        "Dry Zone research station trials: ~228 mm in Maha and ~270 mm in Yala under well-drained Reddish Brown Earths.",
-      source:
-        "Sri Lanka Department of Agriculture (DOA) Field Crops Research and Development Institute, Mahailluppallama study on other field crops (OFCs).",
-      notes:
-        "Consumptive crop water requirement only. Well suited for low-water Yala cultivation and residual moisture cropping.",
+      soilContext: "Maha: ~228 mm; Yala: ~270 mm.",
+      source: "Annals of the Sri Lanka Department of Agriculture (2014)",
+      notes: "Crop water use (consumptive evapotranspiration) only.",
     },
 
     maturity: {
       daysRange: [60, 65],
-      varietyClasses: "Popular DOA varieties include MI-5, MI-6, and Harsha (~60–65 days).",
-      source: "DOA NAICC Field Crop Guidelines.",
-      notes: "Shortest duration among major Dry Zone grain legumes, fitting narrow seasonal windows.",
+      varietyClasses: "Reported growth stages total ~65 days.",
+      source: "Annals of the Sri Lanka Department of Agriculture (2014)",
+      notes: undefined,
     },
 
     nitrogenFixing: true,
-    nitrogenFixingSource:
-      "General botanical knowledge (biological nitrogen fixation via Rhizobium root nodule symbiosis in Fabaceae).",
+    nitrogenFixingSource: "general knowledge - not sourced",
 
-    waterloggingSensitivity: "high",
-    waterloggingSource:
-      "DOA crop management guides: highly susceptible to collar rot, yellowing, and root death under poorly drained or waterlogged soils.",
+    waterloggingSensitivity: "unverified",
+    waterloggingSource: "unverified",
 
-    continuousCroppingRisk: true,
-    continuousCroppingSource:
-      "DOA Plant Protection Division: repeated continuous legume planting encourages soil-borne fungal pathogens (Rhizoctonia, Fusarium).",
+    continuousCroppingRisk: "unverified",
+    continuousCroppingSource: "unverified",
 
-    optimalTemperatureRangeC: [25, 35],
-    temperatureSource: "DOA Crop Recommendation Guides.",
+    optimalTemperatureRangeC: null,
+    temperatureSource: "unverified",
 
-    soilImpactSummary:
-      "Fixes atmospheric nitrogen (reducing synthetic N fertilizer demand for the succeeding crop) and provides readily decomposable organic biomass that improves soil microbial activity.",
-    soilImpactSource: "General agronomic & DOA Field Crops literature.",
+    soilImpactSummary: "Legume residue adds organic nitrogen to soil through biological fixation.",
+    soilImpactSource: "general knowledge - not sourced",
 
-    researchStationContext:
-      "Field Crops Research and Development Institute (FCRDI), Mahailluppallama.",
+    researchStationContext: "Sri Lanka Department of Agriculture Dry Zone trials.",
   },
 
   cowpea: {
@@ -121,49 +116,44 @@ export const CROPS: Record<string, CropDefinition> = {
     localName: "කවුපි (Kauwpi) / தட்டப்பயறு",
     botanicalName: "Vigna unguiculata",
     seasons: ["yala", "maha"],
-    seasonalityNotes:
-      "Drought-hardy legume suited for Yala in rice fallows and Maha upland cultivation. Ministry planned targets reflect balanced seasonal cultivation across both seasons.",
+    seasonalityNotes: "Cultivated in both Yala and Maha seasons.",
+    seasonalitySource: "Ministry of Agriculture Sri Lanka 2024/25 seasonal targets",
 
     waterNeed: {
       value: [175, 288],
       basis: "crop water use",
       unit: "mm/season",
       soilContext:
-        "1992 Dry Zone post-paddy moisture thesis: estimated water requirement at 288 mm, with apparent consumption ~175 mm on residual soil moisture.",
-      source:
-        "Dry Zone post-paddy moisture utilization thesis (1992) / DOA Field Crops references. Flagged: historical point study requiring contemporary validation.",
-      notes:
-        "Consumptive crop water use. Marked as point study; actual requirement depends heavily on residual water table depth.",
+        "Estimated water requirement 288 mm, with apparent consumption 175 mm on residual soil moisture after paddy.",
+      source: "Liyanage (1992)",
+      notes: "Point thesis study on post-paddy residual moisture in the Dry Zone.",
     },
 
     maturity: {
       daysRange: [75, 90],
-      varietyClasses: "Popular DOA varieties: Dhawala, Waruni, Bombay, Anandha (75–90 days).",
-      source: "Sri Lanka Department of Agriculture (DOA) Crop Calendar.",
-      notes: "Moderate duration allows flexibility in rice-based cropping systems.",
+      varietyClasses: "Harvest 75–90 days after planting.",
+      source: "DOA RARDC Kilinochchi",
+      notes: undefined,
     },
 
     nitrogenFixing: true,
-    nitrogenFixingSource:
-      "General botanical knowledge (Rhizobium nitrogen fixation in Fabaceae).",
+    nitrogenFixingSource: "general knowledge - not sourced",
 
     waterloggingSensitivity: "high",
-    waterloggingSource:
-      "Sri Lanka DOA advisory: Cowpea is highly sensitive to waterlogging and poor drainage. Unsuitable for heavy, poorly drained Low Humic Gley soils without raised beds.",
+    waterloggingSource: "DOA RARDC Kilinochchi (highly sensitive to waterlogging)",
 
     continuousCroppingRisk: true,
     continuousCroppingSource:
-      "Sri Lanka DOA official agronomic guideline: Cowpea should NOT be grown continuously on the same field to prevent rapid build-up of soil-borne wilt and root diseases.",
+      "DOA RARDC Kilinochchi (should not be grown continuously on the same field)",
 
     optimalTemperatureRangeC: [20, 30],
-    temperatureSource: "Sri Lanka Department of Agriculture (DOA) crop factsheet.",
+    temperatureSource: "DOA RARDC Kilinochchi",
 
     soilImpactSummary:
-      "Substantial nitrogen fixation and extensive ground cover that inhibits weed seed germination and reduces soil surface erosion during dry spells.",
-    soilImpactSource: "DOA Field Crops research.",
+      "Fixes atmospheric nitrogen; sensitive to excess moisture in heavy soil.",
+    soilImpactSource: "DOA RARDC Kilinochchi",
 
-    researchStationContext:
-      "Mahailluppallama Field Crops Research Station benchmark.",
+    researchStationContext: "Dry Zone research records (Kilinochchi / Mahailluppallama).",
   },
 
   black_gram: {
@@ -173,46 +163,40 @@ export const CROPS: Record<string, CropDefinition> = {
     botanicalName: "Vigna mungo",
     seasons: ["maha", "yala"],
     seasonalityNotes:
-      "Approximately 80% is grown in Maha as a rainfed upland crop; roughly 20% in Yala in paddy fields with supplementary irrigation. National cultivation target: 17,225 ha (Maha) vs 3,812 ha (Yala).",
+      "Ministry targets show 17,225 ha in Maha vs 3,812 ha in Yala (heavily rainfed Maha pattern). About 80% grown in Maha as rainfed upland, remainder in Yala with supplementary irrigation.",
+    seasonalitySource: "Ministry of Agriculture Sri Lanka 2024/25 seasonal targets",
 
     waterNeed: {
-      value: null, // UNVERIFIED / UNMEASURED in reviewed DOA documentation
+      value: null,
       basis: "unverified",
       unit: "mm/season",
-      source:
-        "UNVERIFIED - No verified millimeter water requirement figure located in primary DOA publications. Existing citations trace to secondary web summaries.",
-      notes:
-        "Intentionally left null so rotation engine does not fabricate water consumption. Lowers scenario confidence rating transparently.",
+      source: "UNVERIFIED - no verified figure found in reviewed primary DOA publications",
+      notes: "Water requirement in mm is unverified; engine records a data gap.",
     },
 
     maturity: {
       daysRange: [80, 90],
-      varietyClasses: "Standard DOA variety: MI-1 (80–90 days).",
-      source: "Sri Lanka Department of Agriculture (DOA) FCRDI variety guide (MI-1).",
-      notes: "Well-established variety in the Northern and North Central Dry Zones.",
+      varietyClasses: "Variety MI-1 matures in 80–90 days.",
+      source: "Secondary copy of Sri Lanka DOA text - unverified primary source",
+      notes: undefined,
     },
 
     nitrogenFixing: true,
-    nitrogenFixingSource:
-      "General botanical knowledge (Rhizobium symbiotic nitrogen fixation in Fabaceae).",
+    nitrogenFixingSource: "general knowledge - not sourced",
 
-    waterloggingSensitivity: "moderate",
-    waterloggingSource:
-      "DOA Field Crops handbook: sensitive to standing water, but slightly more tolerant of heavy soils than green gram if surface drainage is provided.",
+    waterloggingSensitivity: "unverified",
+    waterloggingSource: "unverified",
 
-    continuousCroppingRisk: true,
-    continuousCroppingSource:
-      "DOA Plant Pathology guidelines: susceptible to fungal root rot under consecutive legume plantings.",
+    continuousCroppingRisk: "unverified",
+    continuousCroppingSource: "unverified",
 
     optimalTemperatureRangeC: [25, 35],
-    temperatureSource: "DOA variety guide for MI-1.",
+    temperatureSource: "Secondary copy of Sri Lanka DOA text - unverified primary source",
 
-    soilImpactSummary:
-      "Enhances soil nitrogen balance, adds organic residue, and leaves beneficial residual nitrogen for a succeeding cereal crop.",
-    soilImpactSource: "DOA Agronomy summaries.",
+    soilImpactSummary: "Legume root nodulation adds nitrogen to soil.",
+    soilImpactSource: "general knowledge - not sourced",
 
-    researchStationContext:
-      "Mahailluppallama and Regional Agricultural Research Station, Kilinochchi.",
+    researchStationContext: "Dry Zone research records.",
   },
 
   maize: {
@@ -222,47 +206,40 @@ export const CROPS: Record<string, CropDefinition> = {
     botanicalName: "Zea mays",
     seasons: ["maha", "yala"],
     seasonalityNotes:
-      "Predominantly cultivated in Maha as a rainfed upland commercial crop. National seasonal targets reflect intense rainfed focus: ~105,307 ha in Maha vs ~17,757 ha in Yala.",
+      "Ministry targets show ~105,307 ha in Maha vs ~17,757 ha in Yala (predominantly rainfed Maha crop).",
+    seasonalitySource: "Ministry of Agriculture Sri Lanka 2024/25 seasonal targets",
 
     waterNeed: {
-      value: null, // UNVERIFIED in reviewed DOA experimental papers for Dry Zone
+      value: null,
       basis: "unverified",
       unit: "mm/season",
-      source:
-        "UNVERIFIED - Specific millimeter water requirement for Sri Lanka Dry Zone hybrids was not found in reviewed DOA research papers.",
-      notes:
-        "Intentionally left null. FAO general global literature suggests 500–800 mm, but local Sri Lankan research trial number is unverified; engine penalizes confidence rather than substituting guesses.",
+      source: "UNVERIFIED - no verified mm figure in reviewed research papers for Sri Lanka Dry Zone",
+      notes: "Water requirement in mm is unverified; engine records a data gap.",
     },
 
     maturity: {
       daysRange: [105, 110],
-      varietyClasses: "DOA lines and commercial hybrids tested at Mahailluppallama: ~105–110 days.",
-      source:
-        "Sri Lanka Department of Agriculture (DOA) research paper on maize lines and hybrids at Mahailluppallama.",
-      notes:
-        "Maturity is specific to reported research lines; open-pollinated traditional varieties may vary.",
+      varietyClasses: "Tested lines and hybrids at Mahailluppallama mature in 105–110 days.",
+      source: "Karunaratne (2006)",
+      notes: "Specific to research lines at Mahailluppallama.",
     },
 
     nitrogenFixing: false,
-    nitrogenFixingSource: "General botanical knowledge (Poaceae family / cereal crop).",
+    nitrogenFixingSource: "general knowledge - not sourced",
 
-    waterloggingSensitivity: "high",
-    waterloggingSource:
-      "DOA Maize agronomy guide: highly vulnerable to waterlogging and soil anaerobic conditions, especially during seedling and flowering stages.",
+    waterloggingSensitivity: "unverified",
+    waterloggingSource: "unverified",
 
-    continuousCroppingRisk: true,
-    continuousCroppingSource:
-      "DOA crop protection: continuous maize risks severe Fall Armyworm (Spodoptera frugiperda) and stalk borer carryover, plus heavy soil nutrient depletion.",
+    continuousCroppingRisk: "unverified",
+    continuousCroppingSource: "unverified",
 
-    optimalTemperatureRangeC: [21, 32],
-    temperatureSource: "DOA Agro-technology factsheet.",
+    optimalTemperatureRangeC: null,
+    temperatureSource: "unverified",
 
-    soilImpactSummary:
-      "High biomass producer but a heavy nutrient feeder (especially Nitrogen and Potassium). Without organic return or crop rotation with legumes, continuous maize depletes soil fertility.",
-    soilImpactSource: "DOA / FAO Soil Fertility Management guides.",
+    soilImpactSummary: "Cereal biomass producer; non-nitrogen-fixing.",
+    soilImpactSource: "general knowledge - not sourced",
 
-    researchStationContext:
-      "Field Crops Research and Development Institute (FCRDI), Mahailluppallama.",
+    researchStationContext: "Mahailluppallama research station trials (Karunaratne 2006).",
   },
 };
 

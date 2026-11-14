@@ -6,17 +6,18 @@ import RainfallChart from "@/components/Charts/RainfallChart";
 import TemperatureChart from "@/components/Charts/TemperatureChart";
 import SoilWetnessChart from "@/components/Charts/SoilWetnessChart";
 import { useNasaData } from "@/lib/hooks/useNasaData";
+import { CULTIVATION_SEASONS } from "@/data/seasons";
+import { ASSUMPTIONS_LIST } from "@/lib/engine/assumptions";
 
-// APPROXIMATE COORDINATES: Padaviya area, Anuradhapura, Sri Lanka (~8.48°N, 80.72°E).
-// NOTE: Needs verification on an official agricultural/survey map by user.
-const DEFAULT_PADAVIYA_LAT = 8.48;
-const DEFAULT_PADAVIYA_LON = 80.72;
+// PADAVIYA COORDINATES: ~8.83°N, 80.76°E (Wikipedia / BirdLife Sri Lanka).
+const DEFAULT_PADAVIYA_LAT = 8.83;
+const DEFAULT_PADAVIYA_LON = 80.76;
 
 // Convenient location presets for testing across Sri Lanka's inland agricultural zones.
 // NOTE: Coastal points are intentionally avoided because NASA POWER's ~0.5° (~55 km) grid cells
 // mix land and ocean surface assimilation, distorting terrestrial rainfall estimates.
 const LOCATION_PRESETS = [
-  { name: "Padaviya (Dry Zone)", lat: 8.48, lon: 80.72 },
+  { name: "Padaviya (Dry Zone)", lat: 8.83, lon: 80.76 },
   { name: "Mahailluppallama (Agri Research)", lat: 8.11, lon: 80.46 },
   { name: "Polonnaruwa (Dry Zone)", lat: 7.94, lon: 81.0 },
   { name: "Medawachchiya (Dry Zone)", lat: 8.54, lon: 80.49 },
@@ -28,6 +29,17 @@ export default function Home() {
   const [lon, setLon] = useState<number>(DEFAULT_PADAVIYA_LON);
 
   const { data, loading, error, refetch } = useNasaData(lat, lon);
+
+  const mahaSeason = CULTIVATION_SEASONS.find((s) => s.id === "maha");
+  const yalaSeason = CULTIVATION_SEASONS.find((s) => s.id === "yala");
+
+  const mahaLabel = mahaSeason
+    ? `${mahaSeason.name} (${mahaSeason.startMonthName.slice(0, 3)} – ${mahaSeason.endMonthName.slice(0, 3)})`
+    : "Maha Season";
+
+  const yalaLabel = yalaSeason
+    ? `${yalaSeason.name} (${yalaSeason.startMonthName.slice(0, 3)} – ${yalaSeason.endMonthName.slice(0, 3)})`
+    : "Yala Season";
 
   const handleLocationSelect = (newLat: number, newLon: number) => {
     setLat(Number(newLat.toFixed(4)));
@@ -44,13 +56,13 @@ export default function Home() {
               🌾 Field Shift
             </h1>
             <p className="mt-1 text-sm text-gray-600">
-              NASA Earth Observations for Crop Rotation Decision Support & Soil Health
+              NASA Earth Observations for Crop Rotation Decision Support &amp; Soil Health
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 border border-blue-200 self-start sm:self-auto">
             <span>🛰️ NASA POWER API Connected</span>
             <span className="text-blue-400">·</span>
-            <span>2015 – 2025 Climatology</span>
+            <span>2015 – 2025 Climatology (11-Year Daily Records)</span>
           </div>
         </div>
       </header>
@@ -62,7 +74,7 @@ export default function Home() {
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900">1. Select Farm Location</h2>
             <p className="mt-1 text-xs text-gray-500">
-              Click anywhere on the map or choose a preset to fetch ~10-year NASA Earth observations.
+              Click anywhere on the map or choose a preset to fetch 11-year NASA Earth observations.
             </p>
 
             <div className="mt-4">
@@ -79,14 +91,14 @@ export default function Home() {
                   <strong>Longitude:</strong> {lon.toFixed(4)}°E
                 </span>
               </div>
-              <p className="mt-2 text-[11px] text-amber-700">
-                ⚠️ Default coords (~8.48°N, 80.72°E) are approximate Padaviya area. Verify field coordinates on local map.
+              <p className="mt-2 text-[11px] text-gray-600">
+                Default: Padaviya area (~8.83°N, 80.76°E; Wikipedia / BirdLife). Coarse 0.5° grid resolution.
               </p>
             </div>
 
             {/* Presets */}
             <div className="mt-4">
-              <span className="text-xs font-medium text-gray-700">Quick Presets:</span>
+              <span className="text-xs font-medium text-gray-700">Inland Agri Presets:</span>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {LOCATION_PRESETS.map((preset) => (
                   <button
@@ -110,17 +122,47 @@ export default function Home() {
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-xs text-gray-600 space-y-2">
             <h3 className="font-semibold text-gray-900">NASA POWER Data Characteristics</h3>
             <p>
-              • <strong>Resolution:</strong> ~0.5° × 0.5° (~55 km). Represents regional agro-climatology, not micro-plot sensors.
+              • <strong>Resolution:</strong> ~0.5° × 0.5° (~55 km). Represents regional agro-climatology, not field-level microclimates.
             </p>
             <p>
-              • <strong>Coastal Boundary Alert:</strong> Grid cells along coastlines mix ocean and land surface models, causing distorted precipitation readings. Inland agricultural points provide the most accurate terrestrial estimates.
+              • <strong>Coastal Boundary Warning:</strong> Shoreline grid cells mix marine and land surface models, distorting terrestrial rainfall readings. Inland agricultural points provide the most accurate terrestrial estimates.
             </p>
             <p>
               • <strong>GWETROOT:</strong> Root-zone soil wetness index (0.0 to 1.0, dimensionless model estimate).
             </p>
             <p>
-              • <strong>Missing Data:</strong> Standard NASA missing marker (-999) is purged and treated as null; never filled with fake values.
+              • <strong>Missing Data:</strong> NASA fill value (-999) is purged and converted to null; never silently replaced with numbers.
             </p>
+          </div>
+
+          {/* Model Assumptions Card */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-xs text-gray-600 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Model Assumptions (Not Validated)</h3>
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                Transparent Heuristics
+              </span>
+            </div>
+            <p className="text-[11px] text-gray-500">
+              The rotation engine uses transparent heuristic rules that have not been validated by an agronomist:
+            </p>
+            <ul className="space-y-1.5 font-mono text-[11px] text-gray-700 divide-y divide-gray-100">
+              <li className="pt-1">
+                <strong>Water Window:</strong> ceil(daysToMaturity / 30) consecutive months from season&apos;s first month.
+              </li>
+              <li className="pt-1">
+                <strong>Water Coverage:</strong> min(1.0, window rainfall / crop requirement midpoint). Evaluated strictly within crop, never cross-basis.
+              </li>
+              <li className="pt-1">
+                <strong>Economic Potential:</strong> Marked &quot;Not assessed&quot; (no verified price/cost data available).
+              </li>
+              <li className="pt-1">
+                <strong>Soil pH &amp; Texture:</strong> Displayed for informational context only; do not alter scores.
+              </li>
+              <li className="pt-1">
+                <strong>Cowpea Monoculture:</strong> Penalized based on DOA Kilinochchi warning against continuous cowpea.
+              </li>
+            </ul>
           </div>
         </section>
 
@@ -164,25 +206,29 @@ export default function Home() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
                   <div className="text-xs font-semibold uppercase tracking-wider text-blue-700">
-                    Maha Season (Oct – Feb)
+                    {mahaLabel}
                   </div>
                   <div className="mt-2 text-2xl font-bold text-blue-900">
-                    {data.seasonalSummary.mahaRainfallMm} mm
+                    {data.seasonalSummary.mahaRainfallMm !== null
+                      ? `${data.seasonalSummary.mahaRainfallMm} mm`
+                      : "No valid data"}
                   </div>
                   <div className="mt-1 text-xs text-blue-700">
-                    Mean Temp: {data.seasonalSummary.mahaAvgTempC}°C · Soil Wetness: {data.seasonalSummary.mahaAvgSoilWetness}
+                    Mean Temp: {data.seasonalSummary.mahaAvgTempC !== null ? `${data.seasonalSummary.mahaAvgTempC}°C` : "N/A"} · Soil Wetness: {data.seasonalSummary.mahaAvgSoilWetness !== null ? data.seasonalSummary.mahaAvgSoilWetness : "N/A"}
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
                   <div className="text-xs font-semibold uppercase tracking-wider text-amber-700">
-                    Yala Season (Apr – Aug)
+                    {yalaLabel}
                   </div>
                   <div className="mt-2 text-2xl font-bold text-amber-900">
-                    {data.seasonalSummary.yalaRainfallMm} mm
+                    {data.seasonalSummary.yalaRainfallMm !== null
+                      ? `${data.seasonalSummary.yalaRainfallMm} mm`
+                      : "No valid data"}
                   </div>
                   <div className="mt-1 text-xs text-amber-700">
-                    Mean Temp: {data.seasonalSummary.yalaAvgTempC}°C · Soil Wetness: {data.seasonalSummary.yalaAvgSoilWetness}
+                    Mean Temp: {data.seasonalSummary.yalaAvgTempC !== null ? `${data.seasonalSummary.yalaAvgTempC}°C` : "N/A"} · Soil Wetness: {data.seasonalSummary.yalaAvgSoilWetness !== null ? data.seasonalSummary.yalaAvgSoilWetness : "N/A"}
                   </div>
                 </div>
 
@@ -191,10 +237,12 @@ export default function Home() {
                     Annual Total Rainfall
                   </div>
                   <div className="mt-2 text-2xl font-bold text-gray-900">
-                    {data.seasonalSummary.annualRainfallMm} mm
+                    {data.seasonalSummary.annualRainfallMm !== null
+                      ? `${data.seasonalSummary.annualRainfallMm} mm`
+                      : "No valid data"}
                   </div>
                   <div className="mt-1 text-xs text-gray-500">
-                    Mean Annual Temp: {data.seasonalSummary.annualAvgTempC}°C
+                    Mean Annual Temp: {data.seasonalSummary.annualAvgTempC !== null ? `${data.seasonalSummary.annualAvgTempC}°C` : "N/A"}
                   </div>
                 </div>
               </div>
@@ -215,7 +263,7 @@ export default function Home() {
                     Raw NASA POWER Sample Records (First 5 Days)
                   </h3>
                   <span className="text-[11px] text-gray-500">
-                    Demonstrates raw data integrity & -999 conversion
+                    Demonstrates raw data integrity &amp; -999 conversion
                   </span>
                 </div>
                 <div className="overflow-x-auto">
@@ -264,7 +312,7 @@ export default function Home() {
           <span className="text-xl">⚠️</span>
           <div className="space-y-1">
             <h4 className="font-semibold text-amber-950">
-              Decision Support Notice — Farmers & Local Expert Authority
+              Decision Support Notice — Farmers &amp; Local Expert Authority
             </h4>
             <p className="text-xs leading-relaxed text-amber-800">
               Field Shift provides regional climate context derived from NASA POWER satellite and assimilation datasets (native resolution ~0.5° × 0.5°, roughly 55 km). It does <strong>not</strong> substitute for field-level soil testing, local agricultural extension officer guidance, or farmer experiential judgment. Always consult local agrarian service centers and Department of Agriculture guidelines.

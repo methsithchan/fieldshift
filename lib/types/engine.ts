@@ -1,5 +1,4 @@
 import { CropDefinition } from "./crops";
-import { ProcessedClimateData } from "./nasa";
 
 export type DataConfidenceLabel = "measured" | "estimated" | "unknown";
 
@@ -40,7 +39,7 @@ export interface SoilFormState {
 export interface PriorityWeights {
   waterSuitability: number; // 0 - 100
   soilHealth: number; // 0 - 100
-  economicPotential: number; // 0 - 100
+  economicPotential: number; // 0 - 100 (informational, excluded from composite until verified price data exists)
 }
 
 export interface RotationStep {
@@ -61,6 +60,10 @@ export interface EvaluatedStep {
   seasonId: "maha" | "yala";
   seasonName: string;
   crop: CropDefinition;
+  waterCoverageRatio: number | null; // null if unverified water requirement or missing climate
+  windowMonthsCount: number;
+  windowRainfallMm: number | null;
+  cropWaterNeedMidpointMm: number | null;
 }
 
 export interface ScenarioEvaluation {
@@ -70,12 +73,12 @@ export interface ScenarioEvaluation {
   isExistingRotation: boolean;
   steps: [EvaluatedStep, EvaluatedStep, EvaluatedStep];
 
-  // Transparent Sub-Scores (each strictly bounded 0.00 to 1.00)
+  // Transparent Sub-Scores (each strictly bounded 0.00 to 1.00, or null if Not Assessed)
   scores: {
-    waterSuitability: number;
-    soilHealth: number;
-    economicPotential: number;
-    compositeScore: number; // Weighted combination according to priority sliders
+    waterSuitability: number | null; // null if climate is null or all crops in rotation have unverified water need
+    soilHealth: number; // 0.00 to 1.00
+    economicPotential: number | null; // null: "Not assessed" (no verified price/cost data)
+    compositeScore: number | null; // Re-normalized over assessed components only
   };
 
   // Data Confidence Rating (Degrades gracefully when values are null or unknown)

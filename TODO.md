@@ -3,27 +3,32 @@
 > Everything unverified, placeholder, or needing expert review.
 > Nothing fake should ship unnoticed.
 
-Last updated: Phase 3
+Last updated: Phase 3 (Rigorous Sourcing & Engine Heuristics Audit)
 
 ---
 
 ## 🔴 Critical (must fix before any real use)
 
-- [x] **Cultivation calendar**: Maha (Oct–Mar) and Yala (Apr–Sep) updated from FAO Sri Lanka Crop Calendar and DOA advisories in `data/seasons.ts`.
-- [ ] **Unmeasured crop water values**: Maize and Black Gram water requirements in mm are unverified in local research publications and are preserved as `null` in `data/crops.ts`. Engine surfaces them as explicit data gaps and lowers confidence.
-- [ ] **Rice water basis vs. Legume basis**: Rice water values (948–1,232 mm) measure *total requirement* (including land preparation and percolation), whereas Green Gram (~228–270 mm) and Cowpea (~175–288 mm) measure *crop water use* only. Engine strictly avoids cross-basis comparison.
-- [ ] **Default coordinates**: Padaviya area coordinates (~8.48°N, 80.72°E) are approximate. User must check and verify on map.
+- [x] **Cultivation calendar**: Maha (Oct–Mar) and Yala (Apr–Sep) set from FAO Sri Lanka Crop Calendar in `data/seasons.ts` (marked `verified: false` pending formal DOA gazette verification).
+- [x] **Default coordinates updated**: Padaviya coordinates set to ~8.83°N, 80.76°E (sourced from Wikipedia / BirdLife Sri Lanka).
+- [ ] **Unmeasured crop water values**: Maize and Black Gram water requirements in mm are unverified in reviewed Sri Lanka Dry Zone publications and are strictly preserved as `null` in `data/crops.ts`. Engine marks water coverage as "not assessed" and surfaces explicit data gaps.
+- [ ] **Rice water basis vs. Legume basis**: Rice water values (948–1,232 mm; DOA/RRDI Mahailluppallama) measure *total requirement* (including land preparation and percolation), whereas Green Gram (228/270 mm; Annals SL DOA 2014) and Cowpea (175–288 mm; Liyanage 1992) measure *crop water use* only. The engine compares each crop solely to its own requirement and never across bases.
 - [x] **Coastal cell distortion**: Documented in UI and README. Coastal points mix land and marine models in NASA POWER; presets use inland stations (e.g., Mahailluppallama, Medawachchiya, Polonnaruwa).
 - [ ] **License**: No license chosen yet.
 
-## 🟡 Important (should fix for hackathon demo)
+## 🟡 Model Assumptions (Not Validated by an Agronomist)
 
-- [x] **DOA agronomic rules encoded**:
-  - Cowpea continuous cropping prohibition (causes rapid soil-borne wilt/root rot buildup).
-  - Waterlogging risk on poorly drained soils for Cowpea, Green Gram, and Maize.
-  - Legume biological nitrogen fixation bonus.
-- [ ] **Economic scoring**: Rule-based comparative diversification index (0–1); not a predictive yield or revenue forecast.
-- [ ] **Soil type mapping**: No automated lookup table mapping Sri Lankan soil classes (e.g. RBE, LHG) to POWER grid cells; relies on user self-reporting with confidence labels.
+Centralized in `lib/engine/assumptions.ts` and displayed in the UI:
+- [ ] **Water Window Divisor**: Assumed to span `ceil(daysToMaturity / 30)` consecutive months from the season start month.
+- [ ] **Water Coverage Formula**: `min(1.0, window rainfall / crop requirement midpoint)`. No bonus for surplus rainfall.
+- [ ] **Soil Health Baseline**: Heuristic base score of 0.60 before sequence adjustments.
+- [ ] **Continuous Monoculture Penalty**: -0.25 if all 3 seasons grow the identical crop.
+- [ ] **Continuous Cowpea Penalty**: -0.35 if cowpea is grown consecutively (DOA RARDC Kilinochchi warning).
+- [ ] **Legume Nitrogen Fixation Bonus**: +0.12 per legume season for biological nitrogen fixation.
+- [ ] **Waterlogging Soil Penalty**: -0.20 if Cowpea (high sensitivity, DOA RARDC Kilinochchi) is on poor/waterlogged soil.
+- [ ] **Low Organic Carbon Penalty**: -0.08 if soil organic carbon is reported as low (<1.0%).
+- [ ] **Soil pH & Texture**: Informational only; do not alter scores pending validated agronomic threshold tables for Dry Zone crops.
+- [ ] **Economic Potential**: Marked "Not assessed" and excluded from composite score due to lack of verified production cost and farm-gate price data.
 
 ## 🟢 Nice to have (post-hackathon)
 
@@ -37,9 +42,9 @@ Last updated: Phase 3
 
 ## 📦 Dependencies & data sources
 
-- [x] NASA POWER API — daily point data (2015–2025), validated, cached, and sanitized (-999 converted to null).
+- [x] NASA POWER API — 11-year daily point data (2015–2025), validated, cached, and sanitized (-999 converted to null).
 - [x] Leaflet tile server — OpenStreetMap tiles with attribution included.
-- [x] Vitest — 10 unit tests passing covering weights normalization, pure determinism, null handling, score bounds, DOA cowpea rule, and waterlogging.
+- [x] Vitest — Unit tests covering pure determinism, water coverage formula, null handling, DOA continuous cowpea rule, and unknown crop exception.
 
 ---
 

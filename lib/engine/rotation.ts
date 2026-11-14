@@ -7,23 +7,28 @@ import {
 } from "@/lib/types/engine";
 import { ProcessedClimateData } from "@/lib/types/nasa";
 import { CROPS } from "@/data/crops";
+import { CULTIVATION_SEASONS } from "@/data/seasons";
+import { MODEL_ASSUMPTIONS } from "./assumptions";
 
 /**
- * Normalizes priority slider weights so they sum to 1.0 (100%).
+ * Normalizes priority slider weights across active (assessed) components.
+ * Note: Economic potential is currently unverified (no verified price/cost data)
+ * and is excluded from the composite score.
  */
-export function normalizeWeights(weights: PriorityWeights): {
-  wWater: number;
-  wSoil: number;
-  wEcon: number;
-} {
-  const sum = weights.waterSuitability + weights.soilHealth + weights.economicPotential;
+export function normalizeActiveWeights(
+  weights: PriorityWeights,
+  hasWaterScore: boolean
+): { wWater: number; wSoil: number } {
+  if (!hasWaterScore) {
+    return { wWater: 0, wSoil: 1.0 };
+  }
+  const sum = weights.waterSuitability + weights.soilHealth;
   if (sum <= 0) {
-    return { wWater: 0.34, wSoil: 0.33, wEcon: 0.33 };
+    return { wWater: 0.5, wSoil: 0.5 };
   }
   return {
     wWater: weights.waterSuitability / sum,
     wSoil: weights.soilHealth / sum,
-    wEcon: weights.economicPotential / sum,
   };
 }
 
@@ -37,22 +42,11 @@ export function evaluateScenario(
   soil: SoilFormState,
   weights: PriorityWeights
 ): ScenarioEvaluation {
+  // Validate and resolve each step crop. THROW on unknown crop ID (never silent fallback).
   const evaluatedSteps: [EvaluatedStep, EvaluatedStep, EvaluatedStep] = [
-    {
-      seasonId: input.steps[0].seasonId,
-      seasonName: input.steps[0].seasonName,
-      crop: CROPS[input.steps[0].cropId] || CROPS.rice,
-    },
-    {
-      seasonId: input.steps[1].seasonId,
-      seasonName: input.steps[1].seasonName,
-      crop: CROPS[input.steps[1].cropId] || CROPS.green_gram,
-    },
-    {
-      seasonId: input.steps[2].seasonId,
-      seasonName: input.steps[2].seasonName,
-      crop: CROPS[input.steps[2].cropId] || CROPS.rice,
-    },
+    resolveStep(input.steps[0]),
+    resolveStep(input.steps[1]),
+    resolveStep(input.steps[2]),
   ];
 
   const reasons: string[] = [];
@@ -60,227 +54,248 @@ export function evaluateScenario(
   const dataGaps: string[] = [];
   let confidenceDeductions = 0;
 
-  // NASA Climate Metrics (if available)
-  const mahaRain = climate?.seasonalSummary.mahaRainfallMm ?? 1000;
-  const yalaRain = climate?.seasonalSummary.yalaRainfallMm ?? 400;
-  const mahaWetness = climate?.seasonalSummary.mahaAvgSoilWetness ?? 0.75;
-  const yalaWetness = climate?.seasonalSummary.yalaAvgSoilWetness ?? 0.55;
+  // Seasons config lookup
+  const mahaConfig = CULTIVATION_SEASONS.find((s) => s.id === "maha");
+  const yalaConfig = CULTIVATION_SEASONS.find((s) => s.id === "yala");
 
+  // First month index (0-11) of each season:
+  // Maha starts October (month 10 -> index 9); Yala starts April (month 4 -> index 3)
+  const mahaStartMonthIndex = (mahaConfig?.months[0] ?? 10) - 1;
+  const yalaStartMonthIndex = (yalaConfig?.months[0] ?? 4) - 1;
+
+  // Climate status check
   if (!climate) {
-    confidenceDeductions += 30;
-    dataGaps.push("NASA POWER climate data is not yet loaded; using default regional estimates.");
+    confidenceDeductions += MODEL_ASSUMPTIONS.CONFIDENCE_DEDUCTION_NULL_CLIMATE.value;
+    dataGaps.push("NASA POWER climate data has not loaded. Water coverage cannot be assessed without climate observations.");
   } else {
+    const mRain = climate.seasonalSummary.mahaRainfallMm;
+    const yRain = climate.seasonalSummary.yalaRainfallMm;
+    const mRainStr = mRain !== null ? `${mRain.toFixed(1)} mm` : "unavailable";
+    const yRainStr = yRain !== null ? `${yRain.toFixed(1)} mm` : "unavailable";
     reasons.push(
-      `NASA observations at this point show an average of ${mahaRain.toFixed(1)} mm in Maha (GWETROOT: ${mahaWetness.toFixed(2)}) versus ${yalaRain.toFixed(1)} mm in Yala (GWETROOT: ${yalaWetness.toFixed(2)}).`
+      `NASA 11-year observations at selected coordinates show seasonal rainfall: Maha total = ${mRainStr}; Yala total = ${yRainStr}.`
     );
   }
 
-  // ==========================================
-  // 1. WATER SUITABILITY SCORING (0.0 to 1.0)
-  // ==========================================
-  let waterScoreSum = 0;
+  // =========================================================================
+  // 1. WATER SUITABILITY SCORING (Strictly per-crop, never across bases)
+  // Formula: water coverage = min(1, rainfall over window / midpoint of requirement)
+  // Window = ceil(daysToMaturity / 30) consecutive months from season's first month
+  // =========================================================================
+  const assessedCoverageValues: number[] = [];
 
   evaluatedSteps.forEach((step, idx) => {
     const crop = step.crop;
     const isMaha = step.seasonId === "maha";
-    const seasonRain = isMaha ? mahaRain : yalaRain;
-    const seasonWetness = isMaha ? mahaWetness : yalaWetness;
+    const startMonthIdx = isMaha ? mahaStartMonthIndex : yalaStartMonthIndex;
 
-    if (crop.id === "rice") {
-      // Rice: water basis is 'total requirement' (948–1232 mm)
-      if (isMaha) {
-        if (seasonRain >= 900) {
-          waterScoreSum += 0.88;
-          reasons.push(
-            `Season ${idx + 1} (${step.seasonName} Rice): Maha rainfall (${seasonRain.toFixed(1)} mm) supplies the majority of paddy total requirement (948–1,232 mm).`
-          );
-        } else {
-          waterScoreSum += 0.72;
-          reasons.push(
-            `Season ${idx + 1} (${step.seasonName} Rice): Maha rainfall (${seasonRain.toFixed(1)} mm) requires modest supplementary irrigation to meet 948–1,232 mm total demand.`
-          );
-        }
-      } else {
-        // Rice in Yala
-        waterScoreSum += 0.42;
-        risks.push(
-          `Season ${idx + 1} (${step.seasonName} Rice): Yala rainfall (${seasonRain.toFixed(1)} mm) creates a substantial water deficit (~${(1100 - seasonRain).toFixed(0)} mm) against rice total requirement (948–1,232 mm), requiring heavy tank release.`
-        );
-      }
-    } else if (crop.id === "green_gram") {
-      // Green gram: water basis is 'crop water use' (228–270 mm)
-      if (!isMaha) {
-        waterScoreSum += 0.92;
-        reasons.push(
-          `Season ${idx + 1} (${step.seasonName} Green Gram): Yala rainfall (${seasonRain.toFixed(1)} mm) and residual moisture readily satisfy green gram crop water use (228–270 mm).`
-        );
-      } else {
-        waterScoreSum += 0.78;
-        if (seasonWetness > 0.8) {
-          risks.push(
-            `Season ${idx + 1} (${step.seasonName} Green Gram): High Maha soil wetness (${seasonWetness.toFixed(2)}) risks waterlogging for green gram.`
-          );
-        }
-      }
-    } else if (crop.id === "cowpea") {
-      // Cowpea: water basis is 'crop water use' (175–288 mm)
-      if (!isMaha) {
-        waterScoreSum += 0.9;
-        reasons.push(
-          `Season ${idx + 1} (${step.seasonName} Cowpea): Suited to Yala conditions; consumptive water use (175–288 mm) fits well within dry season rainfall and residual moisture.`
-        );
-      } else {
-        waterScoreSum += 0.75;
-      }
-    } else {
-      // Maize or Black Gram: water need is null (unverified in local research trials)
-      confidenceDeductions += 12;
+    // Determine maturity days (use midpoint or default window)
+    const maturityDays = crop.maturity.daysRange
+      ? (crop.maturity.daysRange[0] + crop.maturity.daysRange[1]) / 2
+      : 90;
+
+    const windowMonthsCount = Math.ceil(
+      maturityDays / MODEL_ASSUMPTIONS.WATER_WINDOW_DAYS_PER_MONTH.value
+    );
+    step.windowMonthsCount = windowMonthsCount;
+
+    // Check if crop has a verified water requirement in mm
+    if (crop.waterNeed.value === null) {
+      confidenceDeductions += MODEL_ASSUMPTIONS.CONFIDENCE_DEDUCTION_NULL_WATER_NEED.value;
       dataGaps.push(
-        `${crop.name} water requirement in mm is unverified in reviewed Sri Lanka Dry Zone publications (marked null in crops.ts).`
+        `Season ${idx + 1} (${step.seasonName} ${crop.name}): Water requirement in mm is unverified in reviewed research (null in data/crops.ts); water coverage not assessed.`
       );
+      step.waterCoverageRatio = null;
+      step.windowRainfallMm = null;
+      step.cropWaterNeedMidpointMm = null;
+      return;
+    }
 
-      // Score based on known seasonal cultivation preference rather than faking water mm
-      if (crop.id === "maize" && isMaha) {
-        waterScoreSum += 0.82;
-        reasons.push(
-          `Season ${idx + 1} (${step.seasonName} Maize): Aligned with national target preference (85% grown rainfed in Maha). Precise mm need is unverified.`
-        );
-      } else if (crop.id === "black_gram" && isMaha) {
-        waterScoreSum += 0.84;
-        reasons.push(
-          `Season ${idx + 1} (${step.seasonName} Black Gram): Aligned with rainfed upland Maha pattern (80% national share).`
-        );
+    // Midpoint of this crop's own requirement
+    const needMidpoint = Array.isArray(crop.waterNeed.value)
+      ? (crop.waterNeed.value[0] + crop.waterNeed.value[1]) / 2
+      : crop.waterNeed.value;
+    step.cropWaterNeedMidpointMm = needMidpoint;
+
+    // If climate is null, we cannot calculate rainfall over the window
+    if (!climate || !climate.climatology || climate.climatology.length < 12) {
+      step.waterCoverageRatio = null;
+      step.windowRainfallMm = null;
+      return;
+    }
+
+    // Sum monthly rainfall over the consecutive window months
+    let windowRainfallSum = 0;
+    let windowHasNull = false;
+    const monthNamesIncluded: string[] = [];
+
+    for (let m = 0; m < windowMonthsCount; m++) {
+      const targetMonthIdx = (startMonthIdx + m) % 12;
+      const mData = climate.climatology[targetMonthIdx];
+      monthNamesIncluded.push(mData.monthName);
+      if (mData.avgMonthlyRainfallMm === null) {
+        windowHasNull = true;
       } else {
-        waterScoreSum += 0.6;
+        windowRainfallSum += mData.avgMonthlyRainfallMm;
       }
+    }
+
+    if (windowHasNull) {
+      step.waterCoverageRatio = null;
+      step.windowRainfallMm = null;
+      dataGaps.push(
+        `Season ${idx + 1} (${step.seasonName} ${crop.name}): One or more months in growth window lack valid rainfall observations.`
+      );
+      return;
+    }
+
+    const roundedWindowRainfall = Number(windowRainfallSum.toFixed(1));
+    step.windowRainfallMm = roundedWindowRainfall;
+
+    // Coverage ratio: min(1.0, windowRainfall / needMidpoint)
+    const coverage = Math.min(
+      MODEL_ASSUMPTIONS.WATER_COVERAGE_CAP.value,
+      roundedWindowRainfall / needMidpoint
+    );
+    const roundedCoverage = Number(coverage.toFixed(2));
+    step.waterCoverageRatio = roundedCoverage;
+    assessedCoverageValues.push(roundedCoverage);
+
+    const basisLabel =
+      crop.waterNeed.basis === "total requirement"
+        ? "total requirement (including puddling/seepage)"
+        : "crop water use (ET)";
+
+    reasons.push(
+      `Season ${idx + 1} (${step.seasonName} ${crop.name}): ${roundedWindowRainfall} mm rain across ${windowMonthsCount}-month window (${monthNamesIncluded.join(
+        "-"
+      )}) covers ${(roundedCoverage * 100).toFixed(0)}% of its ${needMidpoint.toFixed(
+        0
+      )} mm ${basisLabel} (source: ${crop.waterNeed.source}).`
+    );
+
+    if (roundedCoverage < 0.6) {
+      risks.push(
+        `Season ${idx + 1} (${step.seasonName} ${crop.name}): Rainfall covers only ${(
+          roundedCoverage * 100
+        ).toFixed(0)}% of requirement; substantial supplementary irrigation or tank water allocation is necessary.`
+      );
     }
   });
 
-  const waterSuitability = Math.max(0.1, Math.min(1.0, waterScoreSum / 3));
+  const finalWaterSuitability =
+    assessedCoverageValues.length > 0
+      ? Number(
+          (
+            assessedCoverageValues.reduce((a, b) => a + b, 0) / assessedCoverageValues.length
+          ).toFixed(2)
+        )
+      : null;
 
-  // ==========================================
+  // =========================================================================
   // 2. SOIL HEALTH SCORING (0.0 to 1.0)
-  // ==========================================
-  let soilScore = 0.65;
+  // =========================================================================
+  let soilScore = MODEL_ASSUMPTIONS.SOIL_BASELINE_SCORE.value;
 
   const cropIds = evaluatedSteps.map((s) => s.crop.id);
   const isMonoculture = cropIds[0] === cropIds[1] && cropIds[1] === cropIds[2];
   const legumeCount = evaluatedSteps.filter((s) => s.crop.nitrogenFixing).length;
 
   if (isMonoculture) {
-    soilScore -= 0.28;
+    soilScore -= MODEL_ASSUMPTIONS.SOIL_MONOCULTURE_PENALTY.value;
     risks.push(
-      `Continuous 3-season ${evaluatedSteps[0].crop.name} monoculture: Increases pest carryover, degrades soil structure, and depletes uniform nutrient pools.`
+      `Continuous 3-season ${evaluatedSteps[0].crop.name} monoculture: Increases pest carryover and uniform nutrient depletion.`
     );
   }
 
-  // DOA Specific Rule: Cowpea must NOT be grown continuously
+  // DOA RARDC Kilinochchi sourced rule: Cowpea must NOT be grown continuously
   const consecutiveCowpea =
     (cropIds[0] === "cowpea" && cropIds[1] === "cowpea") ||
     (cropIds[1] === "cowpea" && cropIds[2] === "cowpea");
   if (consecutiveCowpea) {
-    soilScore -= 0.35;
+    soilScore -= MODEL_ASSUMPTIONS.SOIL_CONSECUTIVE_COWPEA_PENALTY.value;
     risks.push(
-      "CRITICAL DOA WARNING: Sri Lanka Department of Agriculture guidelines explicitly advise that Cowpea should NOT be grown continuously on the same field to prevent rapid build-up of soil-borne wilt and root rot diseases."
+      "DOA RARDC Kilinochchi warning: Cowpea should not be grown continuously on the same field (disease build-up risk)."
     );
   }
 
-  // Nitrogen Fixing Bonus
+  // Legume bonus (biological nitrogen fixation, general knowledge)
   if (legumeCount > 0) {
-    soilScore += legumeCount * 0.12;
+    soilScore += legumeCount * MODEL_ASSUMPTIONS.SOIL_LEGUME_FIXATION_BONUS.value;
     reasons.push(
-      `Includes ${legumeCount} nitrogen-fixing legume crop(s) (${evaluatedSteps
-        .filter((s) => s.crop.nitrogenFixing)
-        .map((s) => s.crop.name)
-        .join(", ")}), providing biological nitrogen fixation and high-quality biomass return.`
+      `Includes ${legumeCount} legume season(s) with nitrogen-fixing capability (general knowledge - not sourced).`
     );
   }
 
-  // Soil Drainage Interaction
+  // Waterlogging risk: only where waterloggingSensitivity is sourced as "high" (Cowpea from DOA RARDC Kilinochchi)
   if (soil.drainage === "poor_waterlogged") {
     evaluatedSteps.forEach((s) => {
       if (s.crop.waterloggingSensitivity === "high") {
-        soilScore -= 0.18;
+        soilScore -= MODEL_ASSUMPTIONS.SOIL_WATERLOGGING_PENALTY.value;
         risks.push(
-          `Soil drainage is reported as poor/waterlogged: ${s.crop.name} is highly sensitive to poor drainage and waterlogging (DOA warning: collar rot and root asphyxiation risk).`
+          `Soil drainage is poor/waterlogged: ${s.crop.name} is sensitive to waterlogging (source: ${s.crop.waterloggingSource}).`
         );
       }
     });
-  } else if (soil.drainage === "well_drained") {
-    soilScore += 0.05;
   }
 
-  // Soil Organic Carbon Interaction
+  // Soil organic carbon deduction
   if (soil.organicCarbon === "low") {
-    soilScore -= 0.08;
-    if (legumeCount > 0) {
-      reasons.push(
-        "Low soil organic carbon detected: Legume incorporation is particularly recommended to rebuild organic active matter."
-      );
-    }
+    soilScore -= MODEL_ASSUMPTIONS.SOIL_LOW_ORGANIC_CARBON_PENALTY.value;
+    risks.push("Soil organic carbon is reported as low (<1.0%).");
   }
 
-  const finalSoilHealth = Math.max(0.1, Math.min(1.0, soilScore));
-
-  // ==========================================
-  // 3. ECONOMIC POTENTIAL SCORING (0.0 to 1.0)
-  // ==========================================
-  // Comparative trade-off index: diversification spread vs single market volatility
-  let econScore = 0.65;
-
-  if (isMonoculture) {
-    econScore -= 0.18;
-    risks.push(
-      "Monoculture market vulnerability: Concentrates all farm revenue in a single commodity price cycle and requires higher synthetic fertilizer expenditure."
-    );
-  } else if (legumeCount > 0) {
-    econScore += 0.15;
-    reasons.push(
-      "Diversified cash crop rotation: Introduces high-value pulses (green gram/cowpea) with strong local demand while lowering synthetic nitrogen fertilizer expenses."
-    );
-  }
-
-  const finalEconomic = Math.max(0.1, Math.min(1.0, econScore));
-
-  // ==========================================
-  // 4. COMPOSITE WEIGHTED SCORE
-  // ==========================================
-  const { wWater, wSoil, wEcon } = normalizeWeights(weights);
-  const compositeScore = Number(
-    (waterSuitability * wWater + finalSoilHealth * wSoil + finalEconomic * wEcon).toFixed(2)
+  // Soil pH and texture are informational only (no validated threshold table)
+  reasons.push(
+    `Soil pH (${soil.ph !== null ? soil.ph : "unknown"}) and texture class (${soil.texture}) are recorded for user reference and do not modify the score (pending validated Sri Lankan agronomic threshold tables).`
   );
 
-  // ==========================================
-  // 5. DATA CONFIDENCE ASSESSMENT
-  // ==========================================
-  // Soil Form confidence deductions
+  const finalSoilHealth = Number(Math.max(0.1, Math.min(1.0, soilScore)).toFixed(2));
+
+  // =========================================================================
+  // 3. ECONOMIC POTENTIAL: NOT ASSESSED (No verified price/cost data)
+  // =========================================================================
+  const finalEconomic: number | null = null;
+
+  // =========================================================================
+  // 4. COMPOSITE WEIGHTED SCORE (Re-normalized over assessed components)
+  // =========================================================================
+  const { wWater, wSoil } = normalizeActiveWeights(weights, finalWaterSuitability !== null);
+  const compositeScore =
+    finalWaterSuitability !== null
+      ? Number((finalWaterSuitability * wWater + finalSoilHealth * wSoil).toFixed(2))
+      : finalSoilHealth; // If water is not assessed, score is soil health only
+
+  // =========================================================================
+  // 5. DATA CONFIDENCE RATING
+  // =========================================================================
   if (soil.phConfidence === "unknown") {
-    confidenceDeductions += 8;
-    dataGaps.push("Soil pH is unknown (not measured or estimated).");
+    confidenceDeductions += MODEL_ASSUMPTIONS.CONFIDENCE_DEDUCTION_UNKNOWN_PH.value;
+    dataGaps.push("Soil pH is unknown.");
   }
   if (soil.textureConfidence === "unknown") {
-    confidenceDeductions += 10;
+    confidenceDeductions += MODEL_ASSUMPTIONS.CONFIDENCE_DEDUCTION_UNKNOWN_TEXTURE.value;
     dataGaps.push("Soil texture class is unknown.");
   }
   if (soil.drainageConfidence === "unknown") {
-    confidenceDeductions += 12;
-    dataGaps.push("Soil drainage class is unknown.");
+    confidenceDeductions += MODEL_ASSUMPTIONS.CONFIDENCE_DEDUCTION_UNKNOWN_DRAINAGE.value;
+    dataGaps.push("Soil drainage condition is unknown.");
   }
   if (soil.organicCarbonConfidence === "unknown") {
-    confidenceDeductions += 8;
-    dataGaps.push("Soil organic carbon content is unknown.");
+    confidenceDeductions += MODEL_ASSUMPTIONS.CONFIDENCE_DEDUCTION_UNKNOWN_SOC.value;
+    dataGaps.push("Soil organic carbon level is unknown.");
   }
 
-  const confidenceScorePercent = Math.max(20, Math.min(100, 100 - confidenceDeductions));
+  const confidenceScorePercent = Math.max(10, Math.min(100, 100 - confidenceDeductions));
   const confidenceLevel =
     confidenceScorePercent >= 75 ? "high" : confidenceScorePercent >= 50 ? "moderate" : "low";
 
   const confidenceExplanation =
     confidenceLevel === "high"
-      ? "High confidence: Crop parameters and soil characteristics are well supported by research station trials."
+      ? "High confidence: Key agronomic parameters and local soil conditions are documented."
       : confidenceLevel === "moderate"
-      ? "Moderate confidence: Some crop water values or soil parameters are unverified and require local extension officer input."
-      : "Low confidence: Multiple quantitative parameters are null or unknown. Treat scores as conceptual directional guides only.";
+      ? "Moderate confidence: Some parameters (e.g. crop water requirement or soil properties) are unverified."
+      : "Low confidence: Multiple quantitative parameters are null or unknown. Treat as a directional exploration aid.";
 
   return {
     id: input.id,
@@ -289,9 +304,9 @@ export function evaluateScenario(
     isExistingRotation: Boolean(input.isExistingRotation),
     steps: evaluatedSteps,
     scores: {
-      waterSuitability: Number(waterSuitability.toFixed(2)),
-      soilHealth: Number(finalSoilHealth.toFixed(2)),
-      economicPotential: Number(finalEconomic.toFixed(2)),
+      waterSuitability: finalWaterSuitability,
+      soilHealth: finalSoilHealth,
+      economicPotential: finalEconomic, // null: "Not assessed"
       compositeScore,
     },
     confidence: {
@@ -303,6 +318,30 @@ export function evaluateScenario(
     reasons,
     risks,
     dataGaps,
+  };
+}
+
+/**
+ * Resolves a rotation step into an EvaluatedStep with the validated CropDefinition.
+ * THROWS on unknown crop ID to prevent silent fallback.
+ */
+function resolveStep(step: {
+  seasonId: "maha" | "yala";
+  seasonName: string;
+  cropId: string;
+}): EvaluatedStep {
+  const crop = CROPS[step.cropId];
+  if (!crop) {
+    throw new Error(`Unknown crop ID: '${step.cropId}'. Expected one of: ${Object.keys(CROPS).join(", ")}`);
+  }
+  return {
+    seasonId: step.seasonId,
+    seasonName: step.seasonName,
+    crop,
+    waterCoverageRatio: null,
+    windowMonthsCount: 3,
+    windowRainfallMm: null,
+    cropWaterNeedMidpointMm: null,
   };
 }
 
@@ -330,7 +369,7 @@ export function getDefaultScenarios(
     {
       id: "B",
       title: "Strategy B: Legume Integration Rotation",
-      tagline: "Rice in Maha rotated with short-duration Green Gram in water-scarce Yala",
+      tagline: "Rice in Maha rotated with short-duration Green Gram in Yala",
       isExistingRotation: false,
       steps: [
         { seasonId: "maha", seasonName: "Maha (Year 1)", cropId: "rice" },
@@ -341,7 +380,7 @@ export function getDefaultScenarios(
     {
       id: "C",
       title: "Strategy C: Diversified Resilient Rotation",
-      tagline: "Rice in Maha, drought-hardy Cowpea in Yala, and commercial upland Maize in Maha",
+      tagline: "Rice in Maha, Cowpea in Yala, and rainfed Maize in Maha",
       isExistingRotation: false,
       steps: [
         { seasonId: "maha", seasonName: "Maha (Year 1)", cropId: "rice" },
