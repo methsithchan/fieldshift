@@ -77,12 +77,12 @@ export const CROPS: Record<string, CropDefinition> = {
     seasonalitySource: "Ministry of Agriculture Sri Lanka 2024/25 seasonal targets",
 
     waterNeed: {
-      value: [228, 270],
+      value: { maha: 228, yala: 270 },
       basis: "crop water use",
       unit: "mm/season",
-      soilContext: "Maha: ~228 mm; Yala: ~270 mm.",
+      soilContext: "Maha: 228 mm; Yala: 270 mm.",
       source: "Annals of the Sri Lanka Department of Agriculture (2014)",
-      notes: "Crop water use (consumptive evapotranspiration) only.",
+      notes: "Season-specific crop water use (consumptive evapotranspiration).",
     },
 
     maturity: {

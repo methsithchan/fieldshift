@@ -8,7 +8,7 @@
 export interface ModelAssumption {
   id: string;
   name: string;
-  category: "water" | "soil" | "confidence" | "economic";
+  category: "rainfall" | "soil" | "confidence" | "economic";
   value: number;
   unit: string;
   description: string;
@@ -16,23 +16,24 @@ export interface ModelAssumption {
 }
 
 export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
-  WATER_WINDOW_DAYS_PER_MONTH: {
-    id: "WATER_WINDOW_DAYS_PER_MONTH",
-    name: "Crop Water Window Divisor",
-    category: "water",
+  RAINFALL_WINDOW_DAYS_PER_MONTH: {
+    id: "RAINFALL_WINDOW_DAYS_PER_MONTH",
+    name: "Crop Rainfall Window Divisor",
+    category: "rainfall",
     value: 30,
     unit: "days/month",
     description:
       "Assumes crop water exposure window spans ceil(daysToMaturity / 30) consecutive months starting from the season's first month.",
     validationStatus: "unvalidated - heuristic rule",
   },
-  WATER_COVERAGE_CAP: {
-    id: "WATER_COVERAGE_CAP",
-    name: "Maximum Water Coverage Cap",
-    category: "water",
+  RAINFALL_COVERAGE_CAP: {
+    id: "RAINFALL_COVERAGE_CAP",
+    name: "Maximum Rainfall Coverage Cap",
+    category: "rainfall",
     value: 1.0,
     unit: "ratio",
-    description: "Water coverage is capped at min(1.0, rainfall / requirement midpoint). Excess rain does not yield bonus points.",
+    description:
+      "Rainfall coverage is capped at min(1.0, rainfall / requirement midpoint). Rainfall coverage ignores tank/canal irrigation; 1.0 means rainfall alone meets the crop requirement over the growth window.",
     validationStatus: "agronomic convention",
   },
   SOIL_BASELINE_SCORE: {

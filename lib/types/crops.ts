@@ -4,8 +4,12 @@ export type WaterBasis =
   | "unverified"; // Unknown or unmeasured
 
 export interface WaterNeedSpec {
-  // Numeric depth in mm: single value, or [min, max] range across soil types / durations, or null if unmeasured
-  value: number | [number, number] | null;
+  // Numeric depth in mm: single value, [min, max] range, season-specific { maha, yala }, or null if unmeasured
+  value:
+    | number
+    | [number, number]
+    | { maha?: number | [number, number]; yala?: number | [number, number] }
+    | null;
   basis: WaterBasis;
   unit: "mm/season";
   soilContext?: string;

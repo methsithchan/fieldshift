@@ -1,13 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Map from "@/components/Map";
 import RainfallChart from "@/components/Charts/RainfallChart";
 import TemperatureChart from "@/components/Charts/TemperatureChart";
 import SoilWetnessChart from "@/components/Charts/SoilWetnessChart";
+import SoilForm from "@/components/SoilForm";
+import PrioritySliders from "@/components/PrioritySliders";
+import ExistingRotationSelector from "@/components/ExistingRotationSelector";
+import ResultsCards from "@/components/ResultsCards";
+import ModelAssumptionsPanel from "@/components/ModelAssumptionsPanel";
 import { useNasaData } from "@/lib/hooks/useNasaData";
 import { CULTIVATION_SEASONS } from "@/data/seasons";
-import { ASSUMPTIONS_LIST } from "@/lib/engine/assumptions";
+import { SoilFormState, PriorityWeights } from "@/lib/types/engine";
+import { getDefaultScenarios, evaluateAllScenarios } from "@/lib/engine/rotation";
 
 // PADAVIYA COORDINATES: ~8.83°N, 80.76°E (Wikipedia / BirdLife Sri Lanka).
 const DEFAULT_PADAVIYA_LAT = 8.83;
@@ -30,6 +36,33 @@ export default function Home() {
 
   const { data, loading, error, refetch } = useNasaData(lat, lon);
 
+  // Soil Form state (all fields support "unknown")
+  const [soil, setSoil] = useState<SoilFormState>({
+    ph: null,
+    phConfidence: "unknown",
+    texture: "loam",
+    textureConfidence: "estimated",
+    organicCarbon: "medium",
+    organicCarbonConfidence: "estimated",
+    drainage: "well_drained",
+    drainageConfidence: "estimated",
+  });
+
+  // Priority Weights (economic is disabled/excluded)
+  const [weights, setWeights] = useState<PriorityWeights>({
+    rainfallCoverage: 50,
+    soilHealth: 50,
+    economicPotential: 0,
+  });
+
+  // Existing 3-season crop rotation for Strategy A
+  const [existingCrops, setExistingCrops] = useState<[string, string, string]>([
+    "rice",
+    "rice",
+    "rice",
+  ]);
+
+  // Dynamic seasons lookup
   const mahaSeason = CULTIVATION_SEASONS.find((s) => s.id === "maha");
   const yalaSeason = CULTIVATION_SEASONS.find((s) => s.id === "yala");
 
@@ -46,10 +79,21 @@ export default function Home() {
     setLon(Number(newLon.toFixed(4)));
   };
 
+  // Pure deterministic evaluation of the 3 strategies
+  const scenarios = useMemo(
+    () => getDefaultScenarios(existingCrops),
+    [existingCrops]
+  );
+
+  const evaluations = useMemo(
+    () => evaluateAllScenarios(scenarios, data, soil, weights),
+    [scenarios, data, soil, weights]
+  );
+
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8 space-y-10">
       {/* Header */}
-      <header className="mb-8 border-b border-gray-200 pb-6">
+      <header className="border-b border-gray-200 pb-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
@@ -62,12 +106,12 @@ export default function Home() {
           <div className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 border border-blue-200 self-start sm:self-auto">
             <span>🛰️ NASA POWER API Connected</span>
             <span className="text-blue-400">·</span>
-            <span>2015 – 2025 Climatology (11-Year Daily Records)</span>
+            <span>2015 – 2025 Climatology (11-Year Daily Observations)</span>
           </div>
         </div>
       </header>
 
-      {/* Main Grid: Left Column = Map & Location; Right Column = Climate Observations */}
+      {/* Main Grid: Location & NASA Climate Observations */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* Left Column: Farm Location Picker */}
         <section className="lg:col-span-5 space-y-6">
@@ -133,36 +177,6 @@ export default function Home() {
             <p>
               • <strong>Missing Data:</strong> NASA fill value (-999) is purged and converted to null; never silently replaced with numbers.
             </p>
-          </div>
-
-          {/* Model Assumptions Card */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-xs text-gray-600 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Model Assumptions (Not Validated)</h3>
-              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
-                Transparent Heuristics
-              </span>
-            </div>
-            <p className="text-[11px] text-gray-500">
-              The rotation engine uses transparent heuristic rules that have not been validated by an agronomist:
-            </p>
-            <ul className="space-y-1.5 font-mono text-[11px] text-gray-700 divide-y divide-gray-100">
-              <li className="pt-1">
-                <strong>Water Window:</strong> ceil(daysToMaturity / 30) consecutive months from season&apos;s first month.
-              </li>
-              <li className="pt-1">
-                <strong>Water Coverage:</strong> min(1.0, window rainfall / crop requirement midpoint). Evaluated strictly within crop, never cross-basis.
-              </li>
-              <li className="pt-1">
-                <strong>Economic Potential:</strong> Marked &quot;Not assessed&quot; (no verified price/cost data available).
-              </li>
-              <li className="pt-1">
-                <strong>Soil pH &amp; Texture:</strong> Displayed for informational context only; do not alter scores.
-              </li>
-              <li className="pt-1">
-                <strong>Cowpea Monoculture:</strong> Penalized based on DOA Kilinochchi warning against continuous cowpea.
-              </li>
-            </ul>
           </div>
         </section>
 
@@ -306,8 +320,26 @@ export default function Home() {
         </section>
       </div>
 
+      {/* Section: Soil Characteristics, Priority Weights, Existing Rotation Selector */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <SoilForm value={soil} onChange={setSoil} />
+        <div className="space-y-6">
+          <PrioritySliders weights={weights} onChange={setWeights} />
+          <ExistingRotationSelector
+            existingCropIds={existingCrops}
+            onChange={setExistingCrops}
+          />
+        </div>
+      </div>
+
+      {/* Section: Three Results Cards */}
+      <ResultsCards evaluations={evaluations} />
+
+      {/* Section: Visible Model Assumptions Panel */}
+      <ModelAssumptionsPanel />
+
       {/* Decision-Support Disclaimer Banner */}
-      <div className="mt-12 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
         <div className="flex items-start gap-3">
           <span className="text-xl">⚠️</span>
           <div className="space-y-1">

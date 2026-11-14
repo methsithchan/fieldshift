@@ -6,6 +6,7 @@ import {
   EvaluatedStep,
 } from "@/lib/types/engine";
 import { ProcessedClimateData } from "@/lib/types/nasa";
+import { CropDefinition } from "@/lib/types/crops";
 import { CROPS } from "@/data/crops";
 import { CULTIVATION_SEASONS } from "@/data/seasons";
 import { MODEL_ASSUMPTIONS } from "./assumptions";
@@ -17,19 +18,40 @@ import { MODEL_ASSUMPTIONS } from "./assumptions";
  */
 export function normalizeActiveWeights(
   weights: PriorityWeights,
-  hasWaterScore: boolean
-): { wWater: number; wSoil: number } {
-  if (!hasWaterScore) {
-    return { wWater: 0, wSoil: 1.0 };
+  hasRainfallScore: boolean
+): { wRainfall: number; wSoil: number } {
+  if (!hasRainfallScore) {
+    return { wRainfall: 0, wSoil: 1.0 };
   }
-  const sum = weights.waterSuitability + weights.soilHealth;
+  const sum = weights.rainfallCoverage + weights.soilHealth;
   if (sum <= 0) {
-    return { wWater: 0.5, wSoil: 0.5 };
+    return { wRainfall: 0.5, wSoil: 0.5 };
   }
   return {
-    wWater: weights.waterSuitability / sum,
+    wRainfall: weights.rainfallCoverage / sum,
     wSoil: weights.soilHealth / sum,
   };
+}
+
+/**
+ * Resolves the numeric water requirement midpoint for a crop in a given season.
+ * Handles single values, ranges, and season-specific definitions (e.g. green gram 228 Maha / 270 Yala).
+ */
+export function getCropWaterNeedForSeason(
+  crop: CropDefinition,
+  seasonId: "maha" | "yala"
+): number | null {
+  const spec = crop.waterNeed.value;
+  if (spec === null) return null;
+  if (typeof spec === "number") return spec;
+  if (Array.isArray(spec)) return (spec[0] + spec[1]) / 2;
+  if (typeof spec === "object") {
+    const seasonVal = spec[seasonId];
+    if (seasonVal === undefined || seasonVal === null) return null;
+    if (typeof seasonVal === "number") return seasonVal;
+    if (Array.isArray(seasonVal)) return (seasonVal[0] + seasonVal[1]) / 2;
+  }
+  return null;
 }
 
 /**
@@ -42,7 +64,7 @@ export function evaluateScenario(
   soil: SoilFormState,
   weights: PriorityWeights
 ): ScenarioEvaluation {
-  // Validate and resolve each step crop. THROW on unknown crop ID (never silent fallback).
+  // Validate and resolve each step crop. THROWS on unknown crop ID (never silent fallback).
   const evaluatedSteps: [EvaluatedStep, EvaluatedStep, EvaluatedStep] = [
     resolveStep(input.steps[0]),
     resolveStep(input.steps[1]),
@@ -53,6 +75,11 @@ export function evaluateScenario(
   const risks: string[] = [];
   const dataGaps: string[] = [];
   let confidenceDeductions = 0;
+
+  // Add the explicit rainfall coverage rule note required by specifications
+  reasons.push(
+    "Rainfall coverage ignores tank/canal irrigation; 1.0 means rainfall alone meets the crop requirement over the growth window."
+  );
 
   // Seasons config lookup
   const mahaConfig = CULTIVATION_SEASONS.find((s) => s.id === "maha");
@@ -66,7 +93,7 @@ export function evaluateScenario(
   // Climate status check
   if (!climate) {
     confidenceDeductions += MODEL_ASSUMPTIONS.CONFIDENCE_DEDUCTION_NULL_CLIMATE.value;
-    dataGaps.push("NASA POWER climate data has not loaded. Water coverage cannot be assessed without climate observations.");
+    dataGaps.push("NASA POWER climate data has not loaded. Rainfall coverage cannot be assessed without climate observations.");
   } else {
     const mRain = climate.seasonalSummary.mahaRainfallMm;
     const yRain = climate.seasonalSummary.yalaRainfallMm;
@@ -78,9 +105,10 @@ export function evaluateScenario(
   }
 
   // =========================================================================
-  // 1. WATER SUITABILITY SCORING (Strictly per-crop, never across bases)
+  // 1. RAINFALL COVERAGE SCORING (Strictly per-crop, never across bases)
   // Formula: water coverage = min(1, rainfall over window / midpoint of requirement)
   // Window = ceil(daysToMaturity / 30) consecutive months from season's first month
+  // Handles season-specific values (e.g. green gram: 228 mm Maha, 270 mm Yala)
   // =========================================================================
   const assessedCoverageValues: number[] = [];
 
@@ -89,33 +117,30 @@ export function evaluateScenario(
     const isMaha = step.seasonId === "maha";
     const startMonthIdx = isMaha ? mahaStartMonthIndex : yalaStartMonthIndex;
 
-    // Determine maturity days (use midpoint or default window)
+    // Determine maturity days
     const maturityDays = crop.maturity.daysRange
       ? (crop.maturity.daysRange[0] + crop.maturity.daysRange[1]) / 2
       : 90;
 
     const windowMonthsCount = Math.ceil(
-      maturityDays / MODEL_ASSUMPTIONS.WATER_WINDOW_DAYS_PER_MONTH.value
+      maturityDays / MODEL_ASSUMPTIONS.RAINFALL_WINDOW_DAYS_PER_MONTH.value
     );
     step.windowMonthsCount = windowMonthsCount;
 
-    // Check if crop has a verified water requirement in mm
-    if (crop.waterNeed.value === null) {
+    // Resolve season-specific requirement midpoint
+    const needMidpoint = getCropWaterNeedForSeason(crop, step.seasonId);
+    step.cropWaterNeedMidpointMm = needMidpoint;
+
+    // If unverified/null in reviewed literature
+    if (needMidpoint === null) {
       confidenceDeductions += MODEL_ASSUMPTIONS.CONFIDENCE_DEDUCTION_NULL_WATER_NEED.value;
       dataGaps.push(
-        `Season ${idx + 1} (${step.seasonName} ${crop.name}): Water requirement in mm is unverified in reviewed research (null in data/crops.ts); water coverage not assessed.`
+        `Season ${idx + 1} (${step.seasonName} ${crop.name}): Water requirement in mm is unverified in reviewed research (null in data/crops.ts); rainfall coverage not assessed.`
       );
       step.waterCoverageRatio = null;
       step.windowRainfallMm = null;
-      step.cropWaterNeedMidpointMm = null;
       return;
     }
-
-    // Midpoint of this crop's own requirement
-    const needMidpoint = Array.isArray(crop.waterNeed.value)
-      ? (crop.waterNeed.value[0] + crop.waterNeed.value[1]) / 2
-      : crop.waterNeed.value;
-    step.cropWaterNeedMidpointMm = needMidpoint;
 
     // If climate is null, we cannot calculate rainfall over the window
     if (!climate || !climate.climatology || climate.climatology.length < 12) {
@@ -154,7 +179,7 @@ export function evaluateScenario(
 
     // Coverage ratio: min(1.0, windowRainfall / needMidpoint)
     const coverage = Math.min(
-      MODEL_ASSUMPTIONS.WATER_COVERAGE_CAP.value,
+      MODEL_ASSUMPTIONS.RAINFALL_COVERAGE_CAP.value,
       roundedWindowRainfall / needMidpoint
     );
     const roundedCoverage = Number(coverage.toFixed(2));
@@ -183,14 +208,31 @@ export function evaluateScenario(
     }
   });
 
-  const finalWaterSuitability =
-    assessedCoverageValues.length > 0
-      ? Number(
-          (
-            assessedCoverageValues.reduce((a, b) => a + b, 0) / assessedCoverageValues.length
-          ).toFixed(2)
-        )
-      : null;
+  const assessedCount = assessedCoverageValues.length;
+  let finalRainfallCoverage: number | null = null;
+  let coverageStatus: "full" | "partial" | "not_assessed" = "not_assessed";
+
+  if (assessedCount === 3) {
+    coverageStatus = "full";
+    finalRainfallCoverage = Number(
+      (
+        assessedCoverageValues.reduce((a, b) => a + b, 0) / 3
+      ).toFixed(2)
+    );
+  } else if (assessedCount > 0) {
+    coverageStatus = "partial";
+    finalRainfallCoverage = Number(
+      (
+        assessedCoverageValues.reduce((a, b) => a + b, 0) / assessedCount
+      ).toFixed(2)
+    );
+    reasons.push(
+      `Rainfall coverage assessed for ${assessedCount} of 3 seasons only (crops with unverified water need are omitted from average).`
+    );
+  } else {
+    coverageStatus = "not_assessed";
+    finalRainfallCoverage = null;
+  }
 
   // =========================================================================
   // 2. SOIL HEALTH SCORING (0.0 to 1.0)
@@ -260,11 +302,11 @@ export function evaluateScenario(
   // =========================================================================
   // 4. COMPOSITE WEIGHTED SCORE (Re-normalized over assessed components)
   // =========================================================================
-  const { wWater, wSoil } = normalizeActiveWeights(weights, finalWaterSuitability !== null);
+  const { wRainfall, wSoil } = normalizeActiveWeights(weights, finalRainfallCoverage !== null);
   const compositeScore =
-    finalWaterSuitability !== null
-      ? Number((finalWaterSuitability * wWater + finalSoilHealth * wSoil).toFixed(2))
-      : finalSoilHealth; // If water is not assessed, score is soil health only
+    finalRainfallCoverage !== null
+      ? Number((finalRainfallCoverage * wRainfall + finalSoilHealth * wSoil).toFixed(2))
+      : finalSoilHealth; // If rainfall coverage is not assessed, score is soil health alone
 
   // =========================================================================
   // 5. DATA CONFIDENCE RATING
@@ -304,7 +346,9 @@ export function evaluateScenario(
     isExistingRotation: Boolean(input.isExistingRotation),
     steps: evaluatedSteps,
     scores: {
-      waterSuitability: finalWaterSuitability,
+      rainfallCoverage: finalRainfallCoverage,
+      rainfallCoverageAssessedCount: assessedCount,
+      rainfallCoverageStatus: coverageStatus,
       soilHealth: finalSoilHealth,
       economicPotential: finalEconomic, // null: "Not assessed"
       compositeScore,

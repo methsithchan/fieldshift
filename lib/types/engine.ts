@@ -37,9 +37,9 @@ export interface SoilFormState {
 }
 
 export interface PriorityWeights {
-  waterSuitability: number; // 0 - 100
+  rainfallCoverage: number; // 0 - 100
   soilHealth: number; // 0 - 100
-  economicPotential: number; // 0 - 100 (informational, excluded from composite until verified price data exists)
+  economicPotential: number; // 0 - 100 (disabled, shown as "Not assessed")
 }
 
 export interface RotationStep {
@@ -75,7 +75,9 @@ export interface ScenarioEvaluation {
 
   // Transparent Sub-Scores (each strictly bounded 0.00 to 1.00, or null if Not Assessed)
   scores: {
-    waterSuitability: number | null; // null if climate is null or all crops in rotation have unverified water need
+    rainfallCoverage: number | null; // null if climate is null or 0 of 3 seasons assessed
+    rainfallCoverageAssessedCount: number; // 0, 1, 2, or 3
+    rainfallCoverageStatus: "full" | "partial" | "not_assessed";
     soilHealth: number; // 0.00 to 1.00
     economicPotential: number | null; // null: "Not assessed" (no verified price/cost data)
     compositeScore: number | null; // Re-normalized over assessed components only

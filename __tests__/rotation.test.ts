@@ -4,6 +4,7 @@ import {
   evaluateAllScenarios,
   getDefaultScenarios,
   normalizeActiveWeights,
+  getCropWaterNeedForSeason,
 } from "../lib/engine/rotation";
 import { SoilFormState, PriorityWeights, RotationScenarioInput } from "../lib/types/engine";
 import { ProcessedClimateData, MonthlyClimatology } from "../lib/types/nasa";
@@ -58,29 +59,65 @@ const defaultSoil: SoilFormState = {
 };
 
 const defaultWeights: PriorityWeights = {
-  waterSuitability: 50,
+  rainfallCoverage: 50,
   soilHealth: 50,
   economicPotential: 0, // Excluded
 };
 
 describe("Rotation Engine — Priority Weights Normalization", () => {
-  it("normalizes active weights (water + soil) to 1.0", () => {
-    const { wWater, wSoil } = normalizeActiveWeights(
-      { waterSuitability: 60, soilHealth: 40, economicPotential: 0 },
+  it("normalizes active weights (rainfallCoverage + soil) to 1.0", () => {
+    const { wRainfall, wSoil } = normalizeActiveWeights(
+      { rainfallCoverage: 60, soilHealth: 40, economicPotential: 0 },
       true
     );
-    expect(wWater + wSoil).toBeCloseTo(1.0);
-    expect(wWater).toBe(0.6);
+    expect(wRainfall + wSoil).toBeCloseTo(1.0);
+    expect(wRainfall).toBe(0.6);
     expect(wSoil).toBe(0.4);
   });
 
-  it("allocates 100% to soil health when water cannot be assessed", () => {
-    const { wWater, wSoil } = normalizeActiveWeights(
-      { waterSuitability: 50, soilHealth: 50, economicPotential: 0 },
+  it("allocates 100% to soil health when rainfall coverage cannot be assessed", () => {
+    const { wRainfall, wSoil } = normalizeActiveWeights(
+      { rainfallCoverage: 50, soilHealth: 50, economicPotential: 0 },
       false
     );
-    expect(wWater).toBe(0);
+    expect(wRainfall).toBe(0);
     expect(wSoil).toBe(1.0);
+  });
+});
+
+describe("Rotation Engine — Green Gram Season-Specific Requirement", () => {
+  it("resolves season-specific water requirement for green gram (228 mm Maha, 270 mm Yala)", () => {
+    const mahaNeed = getCropWaterNeedForSeason(CROPS.green_gram, "maha");
+    const yalaNeed = getCropWaterNeedForSeason(CROPS.green_gram, "yala");
+
+    expect(mahaNeed).toBe(228);
+    expect(yalaNeed).toBe(270);
+  });
+});
+
+describe("Rotation Engine — Partial Rainfall Coverage Handling", () => {
+  it("marks a scenario with unverified crops as 'partial' and displays assessed seasons count", () => {
+    // Strategy C has Rice, Cowpea, and Maize (Maize water need is null)
+    const strategyC = getDefaultScenarios(["rice", "rice", "rice"])[2];
+    const result = evaluateScenario(strategyC, mockPadaviyaClimate, defaultSoil, defaultWeights);
+
+    expect(result.scores.rainfallCoverageStatus).toBe("partial");
+    expect(result.scores.rainfallCoverageAssessedCount).toBe(2);
+    expect(result.scores.rainfallCoverage).not.toBeNull();
+
+    // An explicit note explaining partial coverage must be included
+    expect(
+      result.reasons.some((r) => r.includes("assessed for 2 of 3 seasons only"))
+    ).toBe(true);
+  });
+
+  it("marks fully assessed scenario as 'full' with 3 of 3 seasons assessed", () => {
+    // Strategy B has Rice (Maha), Green Gram (Yala), Rice (Maha) - all have verified water requirements
+    const strategyB = getDefaultScenarios(["rice", "rice", "rice"])[1];
+    const result = evaluateScenario(strategyB, mockPadaviyaClimate, defaultSoil, defaultWeights);
+
+    expect(result.scores.rainfallCoverageStatus).toBe("full");
+    expect(result.scores.rainfallCoverageAssessedCount).toBe(3);
   });
 });
 
@@ -103,13 +140,13 @@ describe("Rotation Engine — Error Handling for Unknown Crop ID", () => {
   });
 });
 
-describe("Rotation Engine — Water Coverage Calculation", () => {
+describe("Rotation Engine — Rainfall Coverage Calculation", () => {
   it("computes water coverage as min(1, rainfall over crop window / midpoint of crop requirement)", () => {
     // Green Gram in Yala (starts April, month index 3).
     // Duration: 60-65 days -> ceil(62.5 / 30) = 3 months: Apr, May, Jun
     // Rainfall in mock: Apr (140.5) + May (68.2) + Jun (15.1) = 223.8 mm
-    // Green gram water need midpoint: (228 + 270) / 2 = 249 mm
-    // Expected coverage: min(1.0, 223.8 / 249) = ~0.90
+    // Green gram Yala water need: 270 mm
+    // Expected coverage: min(1.0, 223.8 / 270) = ~0.83
     const scenario: RotationScenarioInput = {
       id: "B",
       title: "Green Gram Test",
@@ -122,41 +159,20 @@ describe("Rotation Engine — Water Coverage Calculation", () => {
     };
 
     const result = evaluateScenario(scenario, mockPadaviyaClimate, defaultSoil, defaultWeights);
-    expect(result.scores.waterSuitability).toBeCloseTo(0.9, 1);
+    expect(result.scores.rainfallCoverage).toBeCloseTo(0.83, 1);
     expect(result.steps[0].windowRainfallMm).toBe(223.8);
-    expect(result.steps[0].cropWaterNeedMidpointMm).toBe(249);
+    expect(result.steps[0].cropWaterNeedMidpointMm).toBe(270);
   });
 
-  it("returns 'not assessed' (null) for water suitability if climate data is null, without fallback numbers", () => {
+  it("returns 'not assessed' (null) for rainfall coverage if climate data is null, without fallback numbers", () => {
     const scenario = getDefaultScenarios(["rice", "rice", "rice"])[0];
     const result = evaluateScenario(scenario, null, defaultSoil, defaultWeights);
 
-    expect(result.scores.waterSuitability).toBeNull();
+    expect(result.scores.rainfallCoverage).toBeNull();
+    expect(result.scores.rainfallCoverageStatus).toBe("not_assessed");
     expect(result.dataGaps.some((g) => g.includes("climate data has not loaded"))).toBe(true);
     // Composite score gracefully falls back to soil health alone
     expect(result.scores.compositeScore).toBe(result.scores.soilHealth);
-  });
-
-  it("marks crops with null water requirement (Maize, Black Gram) as not assessed and logs data gaps", () => {
-    const maizeScenario: RotationScenarioInput = {
-      id: "C",
-      title: "Maize Scenario",
-      tagline: "Maize test",
-      steps: [
-        { seasonId: "maha", seasonName: "Maha", cropId: "rice" },
-        { seasonId: "yala", seasonName: "Yala", cropId: "cowpea" },
-        { seasonId: "maha", seasonName: "Maha", cropId: "maize" },
-      ],
-    };
-
-    const result = evaluateScenario(maizeScenario, mockPadaviyaClimate, defaultSoil, defaultWeights);
-
-    // Step 3 (Maize) water coverage is null
-    expect(result.steps[2].waterCoverageRatio).toBeNull();
-    expect(result.steps[2].cropWaterNeedMidpointMm).toBeNull();
-
-    // Data gap explicitly recorded
-    expect(result.dataGaps.some((g) => g.includes("Maize"))).toBe(true);
   });
 });
 
@@ -179,7 +195,6 @@ describe("Rotation Engine — Informational Soil pH and Texture", () => {
     const result1 = evaluateScenario(scenario, mockPadaviyaClimate, soilNeutral, defaultWeights);
     const result2 = evaluateScenario(scenario, mockPadaviyaClimate, soilAcidic, defaultWeights);
 
-    // Soil score remains strictly unaffected by unvalidated pH
     expect(result1.scores.soilHealth).toBe(result2.scores.soilHealth);
     expect(result1.reasons.some((r) => r.includes("do not modify the score"))).toBe(true);
   });
@@ -239,9 +254,9 @@ describe("Rotation Engine — Score Bounds & Determinism", () => {
     const scenarios = getDefaultScenarios(["rice", "rice", "rice"]);
     scenarios.forEach((scen) => {
       const result = evaluateScenario(scen, mockPadaviyaClimate, defaultSoil, defaultWeights);
-      if (result.scores.waterSuitability !== null) {
-        expect(result.scores.waterSuitability).toBeGreaterThanOrEqual(0.0);
-        expect(result.scores.waterSuitability).toBeLessThanOrEqual(1.0);
+      if (result.scores.rainfallCoverage !== null) {
+        expect(result.scores.rainfallCoverage).toBeGreaterThanOrEqual(0.0);
+        expect(result.scores.rainfallCoverage).toBeLessThanOrEqual(1.0);
       }
       expect(result.scores.soilHealth).toBeGreaterThanOrEqual(0.0);
       expect(result.scores.soilHealth).toBeLessThanOrEqual(1.0);
@@ -250,5 +265,30 @@ describe("Rotation Engine — Score Bounds & Determinism", () => {
         expect(result.scores.compositeScore).toBeLessThanOrEqual(1.0);
       }
     });
+  });
+
+  it("produces different rainfall coverage scores when location changes (Padaviya vs Mahailluppallama)", () => {
+    // Mahailluppallama has higher rainfall in Yala (590 mm vs 441 mm)
+    const mockMahailluppallamaClimate: ProcessedClimateData = {
+      ...mockPadaviyaClimate,
+      coordinates: { latitude: 8.11, longitude: 80.46 },
+      climatology: mockPadaviyaClimate.climatology.map((m) => ({
+        ...m,
+        // Mahailluppallama experiences higher precipitation
+        avgMonthlyRainfallMm: m.avgMonthlyRainfallMm !== null ? Number((m.avgMonthlyRainfallMm * 1.25).toFixed(1)) : null,
+      })),
+      seasonalSummary: {
+        ...mockPadaviyaClimate.seasonalSummary,
+        mahaRainfallMm: 1126.5,
+        yalaRainfallMm: 590.5,
+      },
+    };
+
+    const scenario = getDefaultScenarios(["rice", "rice", "rice"])[0]; // Rice -> Rice -> Rice
+    const padaviyaResult = evaluateScenario(scenario, mockPadaviyaClimate, defaultSoil, defaultWeights);
+    const mahailluppallamaResult = evaluateScenario(scenario, mockMahailluppallamaClimate, defaultSoil, defaultWeights);
+
+    expect(padaviyaResult.scores.rainfallCoverage).not.toEqual(mahailluppallamaResult.scores.rainfallCoverage);
+    expect(mahailluppallamaResult.scores.rainfallCoverage!).toBeGreaterThan(padaviyaResult.scores.rainfallCoverage!);
   });
 });
