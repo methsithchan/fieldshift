@@ -10,7 +10,9 @@ Last updated: Phase 1
 ## 🔴 Critical (must fix before any real use)
 
 - [ ] **Crop data**: All quantitative values in `data/crops.ts` are `null` (unverified). Must be filled from Sri Lanka Dept. of Agriculture, FAO, or other authoritative sources.
+- [ ] **Cultivation calendar**: Maha and Yala month definitions in `data/seasons.ts` are unverified placeholders. Must be verified against the official Sri Lanka Department of Agriculture (DOA) crop calendar.
 - [ ] **Default coordinates**: Padaviya area coordinates (~8.48°N, 80.72°E) are approximate. User must check and verify on map.
+- [ ] **Coastal cell distortion**: Note documented in UI and README. Avoid coastal points; use inland agricultural stations (e.g., Mahailluppallama, Medawachchiya).
 - [ ] **License**: No license chosen yet.
 
 ## 🟡 Important (should fix for hackathon demo)

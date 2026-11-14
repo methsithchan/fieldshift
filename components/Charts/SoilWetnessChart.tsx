@@ -72,8 +72,8 @@ export default function SoilWetnessChart({ data }: SoilWetnessChartProps) {
       </div>
 
       <div className="mt-3 flex items-center justify-between text-xs text-gray-500 border-t border-gray-100 pt-3">
-        <span>Moist / Waterlogged: &gt; 0.70</span>
-        <span>Water-stressed: &lt; 0.40</span>
+        <span>Scale: 0.0 (minimum wetness) to 1.0 (saturation)</span>
+        <span>Dimensionless index</span>
       </div>
     </div>
   );

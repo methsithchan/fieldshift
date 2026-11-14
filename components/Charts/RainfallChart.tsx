@@ -62,8 +62,8 @@ export default function RainfallChart({ data }: RainfallChartProps) {
       </div>
 
       <div className="mt-3 flex items-center justify-between text-xs text-gray-500 border-t border-gray-100 pt-3">
-        <span>Maha peaks: Oct – Jan</span>
-        <span>Yala dry period: Jun – Aug</span>
+        <span>Precipitation Corrected (PRECTOTCORR)</span>
+        <span>Source: NASA POWER (MERRA-2)</span>
       </div>
     </div>
   );

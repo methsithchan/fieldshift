@@ -5,6 +5,7 @@ import {
   SeasonalSummary,
   DailySampleRecord,
 } from "@/lib/types/nasa";
+import { CULTIVATION_SEASONS } from "@/data/seasons";
 
 const MONTH_NAMES = [
   "Jan",
@@ -192,22 +193,33 @@ export function processNasaClimateData(
     });
   }
 
-  // Calculate Sri Lanka seasonal summaries:
-  // Maha: Oct (9), Nov (10), Dec (11), Jan (0), Feb (1)
-  const mahaMonths = [9, 10, 11, 0, 1];
-  const mahaRainfall = mahaMonths.reduce((sum, m) => sum + climatology[m].avgMonthlyRainfallMm, 0);
-  const mahaTemp =
-    mahaMonths.reduce((sum, m) => sum + climatology[m].avgTemperatureC, 0) / mahaMonths.length;
-  const mahaSoilWetness =
-    mahaMonths.reduce((sum, m) => sum + climatology[m].avgSoilWetness, 0) / mahaMonths.length;
+  // Calculate Sri Lanka seasonal summaries using definitions from data/seasons.ts
+  const mahaConfig = CULTIVATION_SEASONS.find((s) => s.id === "maha");
+  const yalaConfig = CULTIVATION_SEASONS.find((s) => s.id === "yala");
 
-  // Yala: Apr (3), May (4), Jun (5), Jul (6), Aug (7)
-  const yalaMonths = [3, 4, 5, 6, 7];
-  const yalaRainfall = yalaMonths.reduce((sum, m) => sum + climatology[m].avgMonthlyRainfallMm, 0);
+  // Convert 1-indexed months (1-12) to 0-indexed month indices (0-11)
+  const mahaMonthIndices = (mahaConfig?.months ?? [10, 11, 12, 1, 2]).map((m) => m - 1);
+  const yalaMonthIndices = (yalaConfig?.months ?? [4, 5, 6, 7, 8]).map((m) => m - 1);
+
+  const mahaRainfall = mahaMonthIndices.reduce((sum, m) => sum + climatology[m].avgMonthlyRainfallMm, 0);
+  const mahaTemp =
+    mahaMonthIndices.length > 0
+      ? mahaMonthIndices.reduce((sum, m) => sum + climatology[m].avgTemperatureC, 0) / mahaMonthIndices.length
+      : 0;
+  const mahaSoilWetness =
+    mahaMonthIndices.length > 0
+      ? mahaMonthIndices.reduce((sum, m) => sum + climatology[m].avgSoilWetness, 0) / mahaMonthIndices.length
+      : 0;
+
+  const yalaRainfall = yalaMonthIndices.reduce((sum, m) => sum + climatology[m].avgMonthlyRainfallMm, 0);
   const yalaTemp =
-    yalaMonths.reduce((sum, m) => sum + climatology[m].avgTemperatureC, 0) / yalaMonths.length;
+    yalaMonthIndices.length > 0
+      ? yalaMonthIndices.reduce((sum, m) => sum + climatology[m].avgTemperatureC, 0) / yalaMonthIndices.length
+      : 0;
   const yalaSoilWetness =
-    yalaMonths.reduce((sum, m) => sum + climatology[m].avgSoilWetness, 0) / yalaMonths.length;
+    yalaMonthIndices.length > 0
+      ? yalaMonthIndices.reduce((sum, m) => sum + climatology[m].avgSoilWetness, 0) / yalaMonthIndices.length
+      : 0;
 
   // Annual
   const annualRainfall = climatology.reduce((sum, c) => sum + c.avgMonthlyRainfallMm, 0);

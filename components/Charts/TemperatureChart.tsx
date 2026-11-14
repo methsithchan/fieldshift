@@ -66,8 +66,8 @@ export default function TemperatureChart({ data }: TemperatureChartProps) {
       </div>
 
       <div className="mt-3 flex items-center justify-between text-xs text-gray-500 border-t border-gray-100 pt-3">
-        <span>Cooler months: Dec – Jan</span>
-        <span>Warmest months: Apr – Jun</span>
+        <span>2-Meter Air Temperature (T2M)</span>
+        <span>Monthly multi-year means</span>
       </div>
     </div>
   );

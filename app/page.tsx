@@ -12,13 +12,15 @@ import { useNasaData } from "@/lib/hooks/useNasaData";
 const DEFAULT_PADAVIYA_LAT = 8.48;
 const DEFAULT_PADAVIYA_LON = 80.72;
 
-// Convenient location presets for quick testing across Sri Lanka's climatic zones
+// Convenient location presets for testing across Sri Lanka's inland agricultural zones.
+// NOTE: Coastal points are intentionally avoided because NASA POWER's ~0.5° (~55 km) grid cells
+// mix land and ocean surface assimilation, distorting terrestrial rainfall estimates.
 const LOCATION_PRESETS = [
   { name: "Padaviya (Dry Zone)", lat: 8.48, lon: 80.72 },
-  { name: "Anuradhapura Central", lat: 8.31, lon: 80.4 },
+  { name: "Mahailluppallama (Agri Research)", lat: 8.11, lon: 80.46 },
   { name: "Polonnaruwa (Dry Zone)", lat: 7.94, lon: 81.0 },
-  { name: "Hambantota (Semi-Arid)", lat: 6.12, lon: 81.12 },
-  { name: "Kandy (Wet Zone)", lat: 7.29, lon: 80.63 },
+  { name: "Medawachchiya (Dry Zone)", lat: 8.54, lon: 80.49 },
+  { name: "Dambulla (Dry/Intermediate)", lat: 7.87, lon: 80.65 },
 ];
 
 export default function Home() {
@@ -111,7 +113,10 @@ export default function Home() {
               • <strong>Resolution:</strong> ~0.5° × 0.5° (~55 km). Represents regional agro-climatology, not micro-plot sensors.
             </p>
             <p>
-              • <strong>GWETROOT:</strong> Root-zone soil wetness index (0 = dry wilting, 1 = field capacity / fully saturated).
+              • <strong>Coastal Boundary Alert:</strong> Grid cells along coastlines mix ocean and land surface models, causing distorted precipitation readings. Inland agricultural points provide the most accurate terrestrial estimates.
+            </p>
+            <p>
+              • <strong>GWETROOT:</strong> Root-zone soil wetness index (0.0 to 1.0, dimensionless model estimate).
             </p>
             <p>
               • <strong>Missing Data:</strong> Standard NASA missing marker (-999) is purged and treated as null; never filled with fake values.
