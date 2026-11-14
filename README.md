@@ -17,6 +17,15 @@ A decision-support tool that uses NASA Earth observations plus local soil inform
 
 This tool supports — and does not replace — farmers and local agricultural experts. NASA POWER data is at approximately 0.5° resolution (~55 km) and does not represent field-level conditions. Crop data must be verified against local sources (e.g., Sri Lanka Department of Agriculture, FAO) before making farming decisions.
 
+## 🔍 Limitations & Uncertainty
+
+In alignment with the challenge criteria, this tool explicitly highlights uncertainty rather than masking it with false precision:
+
+1. **Crop Data Unverified by Agronomists**: Quantitative agronomic parameters (e.g., precise crop water requirements, yield responses, nutrient demands) originate from preliminary public sources and have **not** been validated by an accredited agronomist or local agricultural extension officer. All quantitative placeholders are explicitly flagged in `TODO.md` and `data/crops.ts`.
+2. **Comparative Scores, Not Yield Predictions**: The 0–1 scenario scores are designed strictly to compare relative trade-offs between crop sequences under prevailing climate and soil constraints. They are **not** predictive harvest forecasts, production guarantees, or financial projections.
+3. **Coarse Spatial Resolution**: NASA POWER satellite and assimilation datasets operate at ~0.5° × 0.5° spatial resolution (~55 km). While excellent for regional climatology and multi-year trend analysis (Maha vs. Yala patterns), they do not capture field-scale microclimates, topographical depressions, or localized tank/irrigation command areas.
+4. **Farmer Judgment Remains Primary**: No algorithmic scoring can account for plot-level pest histories, farmer labor availability, seed accessibility, or localized market dynamics. Field Shift provides evidence-based context to aid dialogue, leaving all management decisions with the farmer and local extension personnel.
+
 ## Tech Stack
 
 - **Framework**: [Next.js](https://nextjs.org/) (App Router) + TypeScript
