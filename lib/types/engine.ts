@@ -1,0 +1,97 @@
+import { CropDefinition } from "./crops";
+import { ProcessedClimateData } from "./nasa";
+
+export type DataConfidenceLabel = "measured" | "estimated" | "unknown";
+
+export type SoilTextureType =
+  | "sandy"
+  | "loam"
+  | "clay_loam"
+  | "heavy_clay"
+  | "unknown";
+
+export type SoilDrainageType =
+  | "excessive"
+  | "well_drained"
+  | "imperfect"
+  | "poor_waterlogged"
+  | "unknown";
+
+export type SoilOrganicCarbonType =
+  | "low" // < 1.0%
+  | "medium" // 1.0% - 2.0%
+  | "high" // > 2.0%
+  | "unknown";
+
+export interface SoilFormState {
+  ph: number | null; // e.g. 6.5, or null if unknown
+  phConfidence: DataConfidenceLabel;
+
+  texture: SoilTextureType;
+  textureConfidence: DataConfidenceLabel;
+
+  organicCarbon: SoilOrganicCarbonType;
+  organicCarbonConfidence: DataConfidenceLabel;
+
+  drainage: SoilDrainageType;
+  drainageConfidence: DataConfidenceLabel;
+}
+
+export interface PriorityWeights {
+  waterSuitability: number; // 0 - 100
+  soilHealth: number; // 0 - 100
+  economicPotential: number; // 0 - 100
+}
+
+export interface RotationStep {
+  seasonId: "maha" | "yala";
+  seasonName: string;
+  cropId: string;
+}
+
+export interface RotationScenarioInput {
+  id: "A" | "B" | "C";
+  title: string;
+  tagline: string;
+  steps: [RotationStep, RotationStep, RotationStep]; // Exactly 3 seasons
+  isExistingRotation?: boolean;
+}
+
+export interface EvaluatedStep {
+  seasonId: "maha" | "yala";
+  seasonName: string;
+  crop: CropDefinition;
+}
+
+export interface ScenarioEvaluation {
+  id: "A" | "B" | "C";
+  title: string;
+  tagline: string;
+  isExistingRotation: boolean;
+  steps: [EvaluatedStep, EvaluatedStep, EvaluatedStep];
+
+  // Transparent Sub-Scores (each strictly bounded 0.00 to 1.00)
+  scores: {
+    waterSuitability: number;
+    soilHealth: number;
+    economicPotential: number;
+    compositeScore: number; // Weighted combination according to priority sliders
+  };
+
+  // Data Confidence Rating (Degrades gracefully when values are null or unknown)
+  confidence: {
+    level: "high" | "moderate" | "low";
+    scorePercent: number; // 0 - 100%
+    missingCount: number;
+    explanation: string;
+  };
+
+  // Plain-Language Reasons (Must cite actual NASA observations at the selected coordinates)
+  reasons: string[];
+
+  // Actionable Agronomic Risks Needing Local Expert Review
+  risks: string[];
+
+  // Explicit Data Gaps (Never hidden or silently fabricated)
+  dataGaps: string[];
+}

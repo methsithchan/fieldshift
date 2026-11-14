@@ -3,39 +3,43 @@
 > Everything unverified, placeholder, or needing expert review.
 > Nothing fake should ship unnoticed.
 
-Last updated: Phase 1
+Last updated: Phase 3
 
 ---
 
 ## 🔴 Critical (must fix before any real use)
 
-- [ ] **Crop data**: All quantitative values in `data/crops.ts` are `null` (unverified). Must be filled from Sri Lanka Dept. of Agriculture, FAO, or other authoritative sources.
-- [ ] **Cultivation calendar**: Maha and Yala month definitions in `data/seasons.ts` are unverified placeholders. Must be verified against the official Sri Lanka Department of Agriculture (DOA) crop calendar.
+- [x] **Cultivation calendar**: Maha (Oct–Mar) and Yala (Apr–Sep) updated from FAO Sri Lanka Crop Calendar and DOA advisories in `data/seasons.ts`.
+- [ ] **Unmeasured crop water values**: Maize and Black Gram water requirements in mm are unverified in local research publications and are preserved as `null` in `data/crops.ts`. Engine surfaces them as explicit data gaps and lowers confidence.
+- [ ] **Rice water basis vs. Legume basis**: Rice water values (948–1,232 mm) measure *total requirement* (including land preparation and percolation), whereas Green Gram (~228–270 mm) and Cowpea (~175–288 mm) measure *crop water use* only. Engine strictly avoids cross-basis comparison.
 - [ ] **Default coordinates**: Padaviya area coordinates (~8.48°N, 80.72°E) are approximate. User must check and verify on map.
-- [ ] **Coastal cell distortion**: Note documented in UI and README. Avoid coastal points; use inland agricultural stations (e.g., Mahailluppallama, Medawachchiya).
+- [x] **Coastal cell distortion**: Documented in UI and README. Coastal points mix land and marine models in NASA POWER; presets use inland stations (e.g., Mahailluppallama, Medawachchiya, Polonnaruwa).
 - [ ] **License**: No license chosen yet.
 
 ## 🟡 Important (should fix for hackathon demo)
 
-- [ ] **Rotation engine scoring weights**: Rule-based scoring logic needs agronomist review. Current rules are transparent but simplified.
-- [ ] **Economic scoring**: No real price/yield data. Scoring is a placeholder framework.
-- [ ] **Soil type mapping**: No lookup table mapping Sri Lankan soil types to POWER grid cells.
-- [ ] **GWETROOT interpretation**: Root-zone soil wetness (0–1) thresholds for "too dry" / "adequate" / "waterlogged" need agronomic validation for Sri Lankan conditions.
+- [x] **DOA agronomic rules encoded**:
+  - Cowpea continuous cropping prohibition (causes rapid soil-borne wilt/root rot buildup).
+  - Waterlogging risk on poorly drained soils for Cowpea, Green Gram, and Maize.
+  - Legume biological nitrogen fixation bonus.
+- [ ] **Economic scoring**: Rule-based comparative diversification index (0–1); not a predictive yield or revenue forecast.
+- [ ] **Soil type mapping**: No automated lookup table mapping Sri Lankan soil classes (e.g. RBE, LHG) to POWER grid cells; relies on user self-reporting with confidence labels.
 
 ## 🟢 Nice to have (post-hackathon)
 
 - [ ] Multi-farm comparison
 - [ ] PDF export of rotation analysis
 - [ ] Sinhala / Tamil localization
-- [ ] Integration with actual field-level soil data (e.g., from soil testing labs)
+- [ ] Integration with field-level soil testing lab databases
 - [ ] Historical yield data correlation
 - [ ] Mobile-optimized layout
 - [ ] Offline support (PWA)
 
 ## 📦 Dependencies & data sources
 
-- [ ] NASA POWER API — no auth needed, but check rate limits for production use
-- [ ] Leaflet tile server — uses OpenStreetMap tiles (check attribution requirements ✅ included)
+- [x] NASA POWER API — daily point data (2015–2025), validated, cached, and sanitized (-999 converted to null).
+- [x] Leaflet tile server — OpenStreetMap tiles with attribution included.
+- [x] Vitest — 10 unit tests passing covering weights normalization, pure determinism, null handling, score bounds, DOA cowpea rule, and waterlogging.
 
 ---
 
