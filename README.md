@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌾 Field Shift — Crop Rotation Decision Support
+
+> **NASA Space Apps 2026** — "Field Shift: Adapting Farms with NASA Data"
+
+A decision-support tool that uses NASA Earth observations plus local soil information to help farmers explore crop-rotation strategies that strengthen soil health and resilience to changing weather and water conditions.
+
+## What It Does
+
+- **Map**: Click to select a farm location (defaults to Padaviya area, Anuradhapura, Sri Lanka)
+- **NASA Climate Data**: 10 years of daily climate observations from NASA POWER (precipitation, temperature, humidity, root-zone soil wetness)
+- **Charts**: Monthly rainfall totals, temperature trends, and soil moisture patterns
+- **Soil Input**: Enter local soil characteristics (pH, texture, organic carbon, drainage) with confidence levels
+- **Rotation Analysis**: Compare 3 crop-rotation scenarios side-by-side with transparent, rule-based scoring
+- **Transparency**: Every data source cited, every uncertainty surfaced, every gap flagged
+
+## ⚠️ Important Disclaimer
+
+This tool supports — and does not replace — farmers and local agricultural experts. NASA POWER data is at approximately 0.5° resolution (~55 km) and does not represent field-level conditions. Crop data must be verified against local sources (e.g., Sri Lanka Department of Agriculture, FAO) before making farming decisions.
+
+## Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router) + TypeScript
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Map**: [Leaflet](https://leafletjs.com/) via [React Leaflet](https://react-leaflet.js.org/)
+- **Charts**: [Recharts](https://recharts.org/)
+- **Testing**: [Vitest](https://vitest.dev/)
+- **Deployment**: [Vercel](https://vercel.com/)
+
+No database. No authentication. No LLM calls. No IoT.
+
+## Data Sources
+
+| Data | Source | Resolution | Notes |
+|------|--------|------------|-------|
+| Climate (precipitation, temperature, humidity, root-zone soil wetness) | [NASA POWER](https://power.larc.nasa.gov/) | ~0.5° (~55 km), daily | 2015–2025. Free, no API key. `-999` = missing value. |
+| Soil properties | User input | Field-level | Self-reported with confidence labels |
+| Crop characteristics | `data/crops.ts` | — | **Most values are UNVERIFIED placeholders.** See `TODO.md`. |
+
+### NASA POWER Credit
+
+Climate data provided by the [NASA Langley Research Center POWER Project](https://power.larc.nasa.gov/), funded through the NASA Earth Science Directorate Applied Science Program.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Run tests
+npx vitest run
+
+# Build for production
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploying to Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Install Vercel CLI
+npm i -g vercel
 
-## Learn More
+# Deploy
+vercel
+```
 
-To learn more about Next.js, take a look at the following resources:
+Or connect the GitHub repository to Vercel for automatic deploys on push.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+├── app/                    # Next.js App Router pages & API routes
+│   ├── api/nasa-power/     # POWER proxy route handler
+│   ├── layout.tsx          # Root layout with footer credit
+│   └── page.tsx            # Main application page
+├── components/             # React components
+│   └── Charts/             # Recharts chart components
+├── lib/
+│   ├── types/              # TypeScript type definitions
+│   ├── hooks/              # React hooks (useNasaData, etc.)
+│   ├── engine/             # Rotation scoring engine (pure functions)
+│   └── utils/              # Data processing utilities
+├── data/
+│   └── crops.ts            # Crop characteristic data (mostly unverified)
+├── __tests__/              # Unit tests
+├── TODO.md                 # Unverified / placeholder items tracker
+└── README.md
+```
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+TBD — hackathon submission.
