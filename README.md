@@ -7,11 +7,10 @@ A decision-support tool that uses NASA Earth observations plus local soil inform
 ## What It Does
 
 - **Map**: Click to select a farm location (defaults to Padaviya area, Anuradhapura, Sri Lanka)
-- **NASA Climate Data**: 10 years of daily climate observations from NASA POWER (precipitation, temperature, humidity, root-zone soil wetness)
+- **NASA Climate Data**: 11 years of daily climate observations from NASA POWER (precipitation, temperature, humidity, root-zone soil wetness)
 - **Charts**: Monthly rainfall totals, temperature trends, and soil moisture patterns
 - **Soil Input**: Enter local soil characteristics (pH, texture, organic carbon, drainage) with confidence levels
 - **Rotation Analysis**: Compare 3 crop-rotation scenarios side-by-side with transparent, rule-based scoring
-- **Transparency**: Every data source cited, every uncertainty surfaced, every gap flagged
 
 ## ⚠️ Important Disclaimer
 
@@ -23,8 +22,9 @@ In alignment with the challenge criteria, this tool explicitly highlights uncert
 
 1. **Crop Data Unverified by Agronomists**: Quantitative agronomic parameters (e.g., precise crop water requirements, yield responses, nutrient demands) originate from preliminary public sources and have **not** been validated by an accredited agronomist or local agricultural extension officer. All quantitative placeholders are explicitly flagged in `TODO.md` and `data/crops.ts`.
 2. **Comparative Scores, Not Yield Predictions**: The 0–1 scenario scores are designed strictly to compare relative trade-offs between crop sequences under prevailing climate and soil constraints. They are **not** predictive harvest forecasts, production guarantees, or financial projections.
-3. **Coarse Spatial Resolution & Coastal Mixing**: NASA POWER satellite and assimilation datasets operate at ~0.5° × 0.5° spatial resolution (~55 km). While well-suited for regional climatology and multi-year trend analysis (Maha vs. Yala patterns), they do not capture field-scale microclimates, depressions, or localized tank command areas. Crucially, **coastal and shoreline grid cells mix terrestrial and marine surface models**, which can significantly distort terrestrial rainfall estimates (e.g., coastal dry-zone points showing inflated precipitation). For decision-support, always rely on inland agricultural points.
-4. **Farmer Judgment Remains Primary**: No algorithmic scoring can account for plot-level pest histories, farmer labor availability, seed accessibility, or localized market dynamics. Field Shift provides evidence-based context to aid dialogue, leaving all management decisions with the farmer and local extension personnel.
+3. **Cross-Basis Water Comparison Caveat**: Rainfall coverage compares each crop with its own specific requirement. Rice uses **total requirement** (including land preparation, puddling, and standing water / seepage: 948–1,232 mm; DOA/RRDI Mahailluppallama), whereas legumes use **crop water use** (consumptive evapotranspiration: 175–288 mm). Therefore, rainfall coverage is **NOT like-for-like across crops**, and legume seasons will appear higher partly due to this differing measurement basis.
+4. **Coarse Spatial Resolution & Coastal Mixing**: NASA POWER satellite and assimilation datasets operate at ~0.5° × 0.5° spatial resolution (~55 km). While well-suited for regional climatology and multi-year trend analysis (Maha vs. Yala patterns), they do not capture field-scale microclimates, depressions, or localized tank command areas. Crucially, **coastal and shoreline grid cells mix terrestrial and marine surface models**, which can significantly distort terrestrial rainfall estimates (e.g., coastal dry-zone points showing inflated precipitation). For decision-support, always rely on inland agricultural points.
+5. **Farmer Judgment Remains Primary**: No algorithmic scoring can account for plot-level pest histories, farmer labor availability, seed accessibility, or localized market dynamics. Field Shift provides evidence-based context to aid dialogue, leaving all management decisions with the farmer and local extension personnel.
 
 ## Tech Stack
 
@@ -41,9 +41,9 @@ No database. No authentication. No LLM calls. No IoT.
 
 | Data | Source | Resolution | Notes |
 |------|--------|------------|-------|
-| Climate (precipitation, temperature, humidity, root-zone soil wetness) | [NASA POWER](https://power.larc.nasa.gov/) | ~0.5° (~55 km), daily | 2015–2025. Free, no API key. `-999` = missing value. |
+| Climate (precipitation, temperature, humidity, root-zone soil wetness) | [NASA POWER](https://power.larc.nasa.gov/) | ~0.5° (~55 km), daily | 2015–2025 (11 years). Free, no API key. `-999` = missing value. |
 | Soil properties | User input | Field-level | Self-reported with confidence labels |
-| Crop characteristics | `data/crops.ts` | — | **Most values are UNVERIFIED placeholders.** See `TODO.md`. |
+| Crop characteristics | `data/crops.ts` | — | Sourced, not agronomist-validated. See `TODO.md`. |
 
 ### NASA POWER Credit
 

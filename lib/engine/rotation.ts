@@ -122,10 +122,11 @@ export function evaluateScenario(
       ? (crop.maturity.daysRange[0] + crop.maturity.daysRange[1]) / 2
       : 90;
 
-    const windowMonthsCount = Math.ceil(
-      maturityDays / MODEL_ASSUMPTIONS.RAINFALL_WINDOW_DAYS_PER_MONTH.value
-    );
-    step.windowMonthsCount = windowMonthsCount;
+    const totalDurationMonths =
+      maturityDays / MODEL_ASSUMPTIONS.RAINFALL_WINDOW_DAYS_PER_MONTH.value;
+    const fullMonths = Math.floor(totalDurationMonths);
+    const lastMonthFraction = totalDurationMonths - fullMonths;
+    step.windowMonthsCount = Number(totalDurationMonths.toFixed(2));
 
     // Resolve season-specific requirement midpoint
     const needMidpoint = getCropWaterNeedForSeason(crop, step.seasonId);
@@ -149,12 +150,14 @@ export function evaluateScenario(
       return;
     }
 
-    // Sum monthly rainfall over the consecutive window months
+    // Sum monthly rainfall over the consecutive window months:
+    // full months + proportional share of the last month
     let windowRainfallSum = 0;
     let windowHasNull = false;
     const monthNamesIncluded: string[] = [];
 
-    for (let m = 0; m < windowMonthsCount; m++) {
+    // Full months
+    for (let m = 0; m < fullMonths; m++) {
       const targetMonthIdx = (startMonthIdx + m) % 12;
       const mData = climate.climatology[targetMonthIdx];
       monthNamesIncluded.push(mData.monthName);
@@ -162,6 +165,19 @@ export function evaluateScenario(
         windowHasNull = true;
       } else {
         windowRainfallSum += mData.avgMonthlyRainfallMm;
+      }
+    }
+
+    // Proportional share of the last month (if fractional)
+    if (lastMonthFraction > 0.001) {
+      const lastMonthIdx = (startMonthIdx + fullMonths) % 12;
+      const lastMData = climate.climatology[lastMonthIdx];
+      const fracPct = (lastMonthFraction * 100).toFixed(0);
+      monthNamesIncluded.push(`${lastMData.monthName} (${fracPct}%)`);
+      if (lastMData.avgMonthlyRainfallMm === null) {
+        windowHasNull = true;
+      } else {
+        windowRainfallSum += lastMonthFraction * lastMData.avgMonthlyRainfallMm;
       }
     }
 
@@ -192,7 +208,7 @@ export function evaluateScenario(
         : "crop water use (ET)";
 
     reasons.push(
-      `Season ${idx + 1} (${step.seasonName} ${crop.name}): ${roundedWindowRainfall} mm rain across ${windowMonthsCount}-month window (${monthNamesIncluded.join(
+      `Season ${idx + 1} (${step.seasonName} ${crop.name}): ${roundedWindowRainfall} mm rain across ${step.windowMonthsCount}-month window (${monthNamesIncluded.join(
         "-"
       )}) covers ${(roundedCoverage * 100).toFixed(0)}% of its ${needMidpoint.toFixed(
         0
@@ -251,9 +267,12 @@ export function evaluateScenario(
   }
 
   // DOA RARDC Kilinochchi sourced rule: Cowpea must NOT be grown continuously
+  // Only the existence of the warning is sourced; penalty size is heuristic.
+  // Not applied if monoculture penalty is already active to avoid double penalty.
   const consecutiveCowpea =
-    (cropIds[0] === "cowpea" && cropIds[1] === "cowpea") ||
-    (cropIds[1] === "cowpea" && cropIds[2] === "cowpea");
+    !isMonoculture &&
+    ((cropIds[0] === "cowpea" && cropIds[1] === "cowpea") ||
+      (cropIds[1] === "cowpea" && cropIds[2] === "cowpea"));
   if (consecutiveCowpea) {
     soilScore -= MODEL_ASSUMPTIONS.SOIL_CONSECUTIVE_COWPEA_PENALTY.value;
     risks.push(
@@ -284,7 +303,7 @@ export function evaluateScenario(
   // Soil organic carbon deduction
   if (soil.organicCarbon === "low") {
     soilScore -= MODEL_ASSUMPTIONS.SOIL_LOW_ORGANIC_CARBON_PENALTY.value;
-    risks.push("Soil organic carbon is reported as low (<1.0%).");
+    risks.push("Soil organic carbon is reported as low.");
   }
 
   // Soil pH and texture are informational only (no validated threshold table)

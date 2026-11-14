@@ -27,6 +27,16 @@ export default function ResultsCards({ evaluations }: ResultsCardsProps) {
         </div>
       </div>
 
+      {/* Methodology Warning Banner */}
+      <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900">
+        <div className="flex items-start gap-2">
+          <span className="text-amber-600 font-bold mt-0.5">⚠️</span>
+          <div>
+            <span className="font-bold">Water Requirement Methodology Note:</span> Rainfall coverage compares each crop with its own specific water requirement. Rice uses <strong>total requirement</strong> (including land preparation, puddling, and standing water / seepage: 948–1,232 mm), whereas legumes use <strong>crop water use</strong> (evapotranspiration: 175–288 mm). Therefore, rainfall coverage is <strong>NOT like-for-like across crops</strong>, and legume seasons will appear substantially higher partly due to this differing measurement basis.
+          </div>
+        </div>
+      </div>
+
       {/* Three Cards Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {evaluations.map((scenario) => {
@@ -84,12 +94,30 @@ export default function ResultsCards({ evaluations }: ResultsCardsProps) {
                 {/* Composite Score */}
                 <div className="flex items-baseline justify-between">
                   <span className="text-xs font-bold text-gray-900">Composite Score:</span>
-                  <span className="font-mono text-xl font-extrabold text-gray-900">
-                    {scenario.scores.compositeScore !== null
-                      ? scenario.scores.compositeScore.toFixed(2)
-                      : "N/A"}
-                    <span className="text-xs font-normal text-gray-500"> / 1.00</span>
-                  </span>
+                  {scenario.scores.rainfallCoverageStatus === "partial" ? (
+                    <div className="text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 border border-amber-200">
+                          Partial ({scenario.scores.rainfallCoverageAssessedCount}/3 seasons)
+                        </span>
+                        <span className="font-mono text-xl font-extrabold text-gray-700">
+                          {scenario.scores.compositeScore !== null
+                            ? scenario.scores.compositeScore.toFixed(2)
+                            : "N/A"}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-amber-700 font-medium">
+                        (lower-bound, not comparable)
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="font-mono text-xl font-extrabold text-gray-900">
+                      {scenario.scores.compositeScore !== null
+                        ? scenario.scores.compositeScore.toFixed(2)
+                        : "N/A"}
+                      <span className="text-xs font-normal text-gray-500"> / 1.00</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Rainfall Coverage */}

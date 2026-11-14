@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify": "vitest run -c vitest.scripts.config.mts"
   },
   "dependencies": {
     "leaflet": "^1.9.4",

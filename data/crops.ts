@@ -42,7 +42,7 @@ export const CROPS: Record<string, CropDefinition> = {
     maturity: {
       daysRange: [85, 135],
       varietyClasses:
-        "Maturity classes (Illangakoon et al.): ultra-short (<90 days, e.g. Bg 250), short (90–99 days, e.g. Bg 300, Bg 352 ~96d), medium (100–109 days), long (110–135 days).",
+        "Maturity classes (Illangakoon et al.): ultra-short (<90 days), short (90–99 days, e.g. Bg 352 ~96d), medium (100–109 days), long (110–135 days).",
       source: "Illangakoon et al.",
       notes: "Maturity duration is reported 1–6 days shorter in Maha than in Yala.",
     },
@@ -151,7 +151,7 @@ export const CROPS: Record<string, CropDefinition> = {
 
     soilImpactSummary:
       "Fixes atmospheric nitrogen; sensitive to excess moisture in heavy soil.",
-    soilImpactSource: "DOA RARDC Kilinochchi",
+    soilImpactSource: "general knowledge - not sourced",
 
     researchStationContext: "Dry Zone research records (Kilinochchi / Mahailluppallama).",
   },

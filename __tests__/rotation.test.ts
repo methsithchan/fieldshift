@@ -141,12 +141,13 @@ describe("Rotation Engine — Error Handling for Unknown Crop ID", () => {
 });
 
 describe("Rotation Engine — Rainfall Coverage Calculation", () => {
-  it("computes water coverage as min(1, rainfall over crop window / midpoint of crop requirement)", () => {
+  it("computes water coverage using fractional growth window (full months + proportional share of last month)", () => {
     // Green Gram in Yala (starts April, month index 3).
-    // Duration: 60-65 days -> ceil(62.5 / 30) = 3 months: Apr, May, Jun
-    // Rainfall in mock: Apr (140.5) + May (68.2) + Jun (15.1) = 223.8 mm
+    // Duration: 60-65 days -> midpoint 62.5 days -> 62.5 / 30 = 2 full months + (2.5 / 30) of 3rd month
+    // Rainfall in mock: Apr (140.5) + May (68.2) + (2.5 / 30) * Jun (15.1)
+    // = 140.5 + 68.2 + 1.2583 = 209.958... -> 210.0 mm
     // Green gram Yala water need: 270 mm
-    // Expected coverage: min(1.0, 223.8 / 270) = ~0.83
+    // Expected coverage: min(1.0, 210.0 / 270) = ~0.78
     const scenario: RotationScenarioInput = {
       id: "B",
       title: "Green Gram Test",
@@ -159,8 +160,9 @@ describe("Rotation Engine — Rainfall Coverage Calculation", () => {
     };
 
     const result = evaluateScenario(scenario, mockPadaviyaClimate, defaultSoil, defaultWeights);
-    expect(result.scores.rainfallCoverage).toBeCloseTo(0.83, 1);
-    expect(result.steps[0].windowRainfallMm).toBe(223.8);
+    expect(result.scores.rainfallCoverage).toBeCloseTo(0.78, 2);
+    expect(result.steps[0].windowRainfallMm).toBe(210.0);
+    expect(result.steps[0].windowMonthsCount).toBe(2.08);
     expect(result.steps[0].cropWaterNeedMidpointMm).toBe(270);
   });
 
@@ -223,6 +225,32 @@ describe("Rotation Engine — Sourced Agronomic Rules", () => {
     const doaWarning = result.risks.find((r) => r.includes("DOA RARDC Kilinochchi warning"));
     expect(doaWarning).toBeDefined();
     expect(doaWarning).toContain("Cowpea should not be grown continuously");
+  });
+
+  it("does not apply both monoculture and consecutive-cowpea penalties to the same rotation", () => {
+    const cowpeaMonoculture: RotationScenarioInput = {
+      id: "A",
+      title: "Cowpea Monoculture",
+      tagline: "Test",
+      steps: [
+        { seasonId: "maha", seasonName: "Maha", cropId: "cowpea" },
+        { seasonId: "yala", seasonName: "Yala", cropId: "cowpea" },
+        { seasonId: "maha", seasonName: "Maha", cropId: "cowpea" },
+      ],
+    };
+
+    const result = evaluateScenario(
+      cowpeaMonoculture,
+      mockPadaviyaClimate,
+      defaultSoil,
+      defaultWeights
+    );
+
+    // Monoculture penalty applies (-0.25), but NOT consecutive cowpea (-0.35)
+    expect(result.risks.some((r) => r.includes("monoculture"))).toBe(true);
+    expect(result.risks.some((r) => r.includes("DOA RARDC Kilinochchi warning"))).toBe(false);
+    // Baseline 0.60 - 0.25 (monoculture) + 3*0.12 (legume bonus 0.36) = 0.71
+    expect(result.scores.soilHealth).toBe(0.71);
   });
 
   it("penalizes Cowpea on poorly drained soil based on DOA RARDC Kilinochchi waterlogging source", () => {

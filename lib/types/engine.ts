@@ -17,9 +17,9 @@ export type SoilDrainageType =
   | "unknown";
 
 export type SoilOrganicCarbonType =
-  | "low" // < 1.0%
-  | "medium" // 1.0% - 2.0%
-  | "high" // > 2.0%
+  | "low"
+  | "medium"
+  | "high"
   | "unknown";
 
 export interface SoilFormState {

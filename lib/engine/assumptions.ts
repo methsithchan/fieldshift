@@ -12,7 +12,7 @@ export interface ModelAssumption {
   value: number;
   unit: string;
   description: string;
-  validationStatus: "unvalidated - heuristic rule" | "agronomic convention" | "doa recommendation";
+  validationStatus: "unvalidated - heuristic rule";
 }
 
 export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
@@ -23,7 +23,7 @@ export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
     value: 30,
     unit: "days/month",
     description:
-      "Assumes crop water exposure window spans ceil(daysToMaturity / 30) consecutive months starting from the season's first month.",
+      "Assumes crop water exposure window = full months + proportional share of the last month, using daysToMaturity / 30, starting from the season's first month.",
     validationStatus: "unvalidated - heuristic rule",
   },
   RAINFALL_COVERAGE_CAP: {
@@ -34,7 +34,7 @@ export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
     unit: "ratio",
     description:
       "Rainfall coverage is capped at min(1.0, rainfall / requirement midpoint). Rainfall coverage ignores tank/canal irrigation; 1.0 means rainfall alone meets the crop requirement over the growth window.",
-    validationStatus: "agronomic convention",
+    validationStatus: "unvalidated - heuristic rule",
   },
   SOIL_BASELINE_SCORE: {
     id: "SOIL_BASELINE_SCORE",
@@ -61,8 +61,8 @@ export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
     value: 0.35,
     unit: "deduction",
     description:
-      "Deduction when cowpea is grown consecutively in the same rotation (reflecting DOA RARDC Kilinochchi warning against soil disease build-up).",
-    validationStatus: "doa recommendation",
+      "Deduction when cowpea is grown consecutively in the same rotation (only the existence of the DOA RARDC Kilinochchi warning against soil disease build-up is sourced, not the deduction size; not applied if monoculture penalty is already active).",
+    validationStatus: "unvalidated - heuristic rule",
   },
   SOIL_LEGUME_FIXATION_BONUS: {
     id: "SOIL_LEGUME_FIXATION_BONUS",
@@ -81,8 +81,8 @@ export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
     value: 0.2,
     unit: "deduction",
     description:
-      "Deduction per season if a crop with documented high waterlogging sensitivity (Cowpea, DOA RARDC Kilinochchi) is on poor/waterlogged soil.",
-    validationStatus: "doa recommendation",
+      "Deduction per season if a crop with documented high waterlogging sensitivity (Cowpea, DOA RARDC Kilinochchi) is on poor/waterlogged soil (only the existence of the sensitivity is sourced, not the deduction size).",
+    validationStatus: "unvalidated - heuristic rule",
   },
   SOIL_LOW_ORGANIC_CARBON_PENALTY: {
     id: "SOIL_LOW_ORGANIC_CARBON_PENALTY",
@@ -90,7 +90,7 @@ export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
     category: "soil",
     value: 0.08,
     unit: "deduction",
-    description: "Deduction applied if soil organic carbon is reported as low (<1.0%).",
+    description: "Deduction applied if soil organic carbon is reported as low.",
     validationStatus: "unvalidated - heuristic rule",
   },
   CONFIDENCE_DEDUCTION_UNKNOWN_PH: {
