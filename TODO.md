@@ -10,7 +10,7 @@ Last updated: Phase 1
 ## 🔴 Critical (must fix before any real use)
 
 - [ ] **Crop data**: All quantitative values in `data/crops.ts` are `null` (unverified). Must be filled from Sri Lanka Dept. of Agriculture, FAO, or other authoritative sources.
-- [ ] **Default coordinates**: Padaviya area coordinates (~8.48°N, 80.72°E) are approximate. Verify on a map.
+- [ ] **Default coordinates**: Padaviya area coordinates (~8.48°N, 80.72°E) are approximate. User must check and verify on map.
 - [ ] **License**: No license chosen yet.
 
 ## 🟡 Important (should fix for hackathon demo)
