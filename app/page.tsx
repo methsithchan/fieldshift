@@ -159,13 +159,20 @@ export default function FarmerWizard() {
 
   // Context summary for Help LLM prompt
   const getScreenContextText = (): string => {
-    let base = `Screen ${step} of 5. Active language: ${lang}. Current location: ${lat}°N, ${lon}°E (${locationName}). Current Maha: ${currentMahaCrop}, Current Yala: ${currentYalaCrop}. Considered crops: ${consideredCrops.join(", ")}. Dry Zone status: ${isOutsideDryZone ? "Outside" : "Inside"}.`;
+    const screenNames = [
+      "Language selection page",
+      "Farm location page",
+      "Current crops page",
+      "Alternative crops page",
+      "Rotation strategy results page",
+    ];
+    let base = `${screenNames[step - 1]}. Active language: ${lang}. Current location: ${lat}°N, ${lon}°E (${locationName}). Current Maha crop: ${currentMahaCrop}, Current Yala crop: ${currentYalaCrop}. Considered alternative crops: ${consideredCrops.join(", ")}. Dry Zone status: ${isOutsideDryZone ? "Outside Dry Zone" : "Inside Dry Zone"}.`;
     if (step === 5) {
       const activeCropIds = Array.from(new Set([currentMahaCrop, currentYalaCrop, ...consideredCrops]));
       const hazardSnippets = CLIMATE_HAZARD_ADVICE.filter((h) => activeCropIds.includes(h.cropId as typeof CROP_IDS[number]))
-        .map((h) => `${h.cropId} (${h.label}): "${h.advice}" (source: crop book, p. ${h.sourcePage})`)
+        .map((h) => `${h.cropId} (${h.label}): "${h.advice}" (source: DOA Crop Book, p. ${h.sourcePage})`)
         .join("; ");
-      base += ` Results available. Sourced DOA climate hazard advice: ${hazardSnippets}.`;
+      base += ` Results available for active crops (${activeCropIds.join(", ")}). Sourced DOA crop book hazard advice: ${hazardSnippets}.`;
     }
     return base;
   };
@@ -924,7 +931,17 @@ export default function FarmerWizard() {
           isOpen={isHelpOpen}
           onClose={() => setIsHelpOpen(false)}
           lang={lang}
-          screenId={`step_${step}`}
+          screenId={
+            step === 1
+              ? "language"
+              : step === 2
+              ? "location"
+              : step === 3
+              ? "current_crops"
+              : step === 4
+              ? "considered_crops"
+              : "results"
+          }
           staticHelpText={getStaticHelpText()}
           screenContextText={getScreenContextText()}
         />
