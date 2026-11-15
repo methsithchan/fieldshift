@@ -248,6 +248,7 @@ describe("Rotation Engine — Sourced Agronomic Rules", () => {
 
     // Monoculture penalty applies (-0.25), but NOT consecutive cowpea (-0.35)
     expect(result.risks.some((r) => r.includes("monoculture"))).toBe(true);
+    expect(result.risks.some((r) => r.includes("may increase pest carryover"))).toBe(true);
     expect(result.risks.some((r) => r.includes("DOA RARDC Kilinochchi warning"))).toBe(false);
     // Baseline 0.60 - 0.25 (monoculture) + 3*0.12 (legume bonus 0.36) = 0.71
     expect(result.scores.soilHealth).toBe(0.71);

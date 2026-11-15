@@ -262,7 +262,7 @@ export function evaluateScenario(
   if (isMonoculture) {
     soilScore -= MODEL_ASSUMPTIONS.SOIL_MONOCULTURE_PENALTY.value;
     risks.push(
-      `Continuous 3-season ${evaluatedSteps[0].crop.name} monoculture: Increases pest carryover and uniform nutrient depletion.`
+      `Continuous 3-season ${evaluatedSteps[0].crop.name} monoculture: may increase pest carryover and nutrient depletion.`
     );
   }
 
@@ -352,11 +352,11 @@ export function evaluateScenario(
     confidenceScorePercent >= 75 ? "high" : confidenceScorePercent >= 50 ? "moderate" : "low";
 
   const confidenceExplanation =
-    confidenceLevel === "high"
-      ? "High confidence: Key agronomic parameters and local soil conditions are documented."
-      : confidenceLevel === "moderate"
-      ? "Moderate confidence: Some parameters (e.g. crop water requirement or soil properties) are unverified."
-      : "Low confidence: Multiple quantitative parameters are null or unknown. Treat as a directional exploration aid.";
+    confidenceScorePercent >= 75
+      ? "Most input parameters are documented. Scoring rules remain unvalidated heuristics."
+      : confidenceScorePercent >= 50
+      ? "Some parameters (e.g. crop water requirement or soil properties) are unverified. Scoring rules are unvalidated heuristics."
+      : "Multiple quantitative parameters are null or unknown. Treat as a directional exploration aid. Scoring rules are unvalidated heuristics.";
 
   return {
     id: input.id,

@@ -54,7 +54,7 @@ export default function ExistingRotationSelector({
             >
               {CROP_LIST.map((crop) => (
                 <option key={crop.id} value={crop.id}>
-                  {crop.name} ({crop.localName.split("/")[0].trim()})
+                  {crop.name}
                 </option>
               ))}
             </select>

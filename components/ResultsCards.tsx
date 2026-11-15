@@ -6,12 +6,6 @@ interface ResultsCardsProps {
   evaluations: [ScenarioEvaluation, ScenarioEvaluation, ScenarioEvaluation];
 }
 
-const CONFIDENCE_STYLES = {
-  high: { bg: "bg-emerald-50", text: "text-emerald-800", border: "border-emerald-200" },
-  moderate: { bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200" },
-  low: { bg: "bg-rose-50", text: "text-rose-800", border: "border-rose-200" },
-};
-
 export default function ResultsCards({ evaluations }: ResultsCardsProps) {
   return (
     <div className="space-y-6">
@@ -40,8 +34,6 @@ export default function ResultsCards({ evaluations }: ResultsCardsProps) {
       {/* Three Cards Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {evaluations.map((scenario) => {
-          const confStyle = CONFIDENCE_STYLES[scenario.confidence.level];
-
           return (
             <div
               key={scenario.id}
@@ -61,14 +53,15 @@ export default function ResultsCards({ evaluations }: ResultsCardsProps) {
                       ? "Strategy B (Legume)"
                       : "Strategy C (Diversified)"}
                   </span>
-                  <span
-                    className={`rounded px-2 py-0.5 text-[10px] font-semibold border ${confStyle.bg} ${confStyle.text} ${confStyle.border}`}
-                  >
-                    Confidence: {scenario.confidence.level.toUpperCase()} ({scenario.confidence.scorePercent}%)
+                  <span className="rounded px-2 py-0.5 text-[10px] font-semibold border bg-slate-100 text-slate-700 border-slate-200">
+                    Input completeness: {scenario.confidence.scorePercent}%
                   </span>
                 </div>
                 <h3 className="mt-1 text-base font-bold text-gray-900">{scenario.title}</h3>
                 <p className="mt-0.5 text-xs text-gray-500">{scenario.tagline}</p>
+                <p className="mt-1 text-[10px] text-gray-500 italic">
+                  Does not validate the model; scoring rules are unvalidated heuristics.
+                </p>
               </div>
 
               {/* 3-Season Sequence Timeline */}
@@ -107,7 +100,7 @@ export default function ResultsCards({ evaluations }: ResultsCardsProps) {
                         </span>
                       </div>
                       <div className="text-[10px] text-amber-700 font-medium">
-                        (lower-bound, not comparable)
+                        (partial, not comparable)
                       </div>
                     </div>
                   ) : (

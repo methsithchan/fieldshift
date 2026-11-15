@@ -36,16 +36,16 @@ export default function Home() {
 
   const { data, loading, error, refetch } = useNasaData(lat, lon);
 
-  // Soil Form state (all fields support "unknown")
+  // Soil Form state: all four fields start as Unknown with no preselected values
   const [soil, setSoil] = useState<SoilFormState>({
     ph: null,
     phConfidence: "unknown",
-    texture: "loam",
-    textureConfidence: "estimated",
-    organicCarbon: "medium",
-    organicCarbonConfidence: "estimated",
-    drainage: "well_drained",
-    drainageConfidence: "estimated",
+    texture: "unknown",
+    textureConfidence: "unknown",
+    organicCarbon: "unknown",
+    organicCarbonConfidence: "unknown",
+    drainage: "unknown",
+    drainageConfidence: "unknown",
   });
 
   // Priority Weights (economic is disabled/excluded)
@@ -79,6 +79,15 @@ export default function Home() {
     setLon(Number(newLon.toFixed(4)));
   };
 
+  // Approximate Dry Zone bounding box (Sri Lanka Dry & Intermediate Zones)
+  // This is approximate; the true boundary is irregular.
+  const DRY_ZONE_BOX = { latMin: 7.0, latMax: 10.0, lonMin: 79.5, lonMax: 81.5 };
+  const isOutsideDryZone =
+    lat < DRY_ZONE_BOX.latMin ||
+    lat > DRY_ZONE_BOX.latMax ||
+    lon < DRY_ZONE_BOX.lonMin ||
+    lon > DRY_ZONE_BOX.lonMax;
+
   // Pure deterministic evaluation of the 3 strategies
   const scenarios = useMemo(
     () => getDefaultScenarios(existingCrops),
@@ -110,6 +119,18 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Dry Zone Warning Banner */}
+      {isOutsideDryZone && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 shadow-xs">
+          <div className="flex items-start gap-2">
+            <span className="text-amber-600 font-bold mt-0.5">⚠️</span>
+            <div>
+              <span className="font-bold">Outside approximate Dry Zone boundary:</span> Crop data comes from Dry Zone research stations; results elsewhere are not meaningful. (Selected location is outside the approximate Dry Zone bounding box 7.0°N–10.0°N, 79.5°E–81.5°E).
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Grid: Location & NASA Climate Observations */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
