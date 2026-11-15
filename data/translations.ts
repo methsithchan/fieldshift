@@ -77,6 +77,40 @@ export interface TranslationStrings {
   helpConsideredCrops: string;
   helpResults: string;
 
+  // Redesign Flow (Journo-style)
+  journoLangTitle: string;
+  journoLangSubtitle: string;
+  journoRoleTitle: string;
+  journoRoleSubtitle: string;
+  journoRoleFarmer: string;
+  journoRoleFarmerDesc: string;
+  journoRoleResearcher: string;
+  journoRoleResearcherDesc: string;
+  journoLocTitle: string;
+  journoLocSubtitle: string;
+  journoUseMyLocation: string;
+  journoLocating: string;
+  journoOrSelectArea: string;
+  journoNotStoredNote: string;
+  journoCropTitle: string;
+  journoCropSubtitle: string;
+  journoCropSelectPlaceholder: string;
+  journoContinueBtn: string;
+  journoBackBtn: string;
+  journoRainHeader: string;
+  journoRainSubtitle: string;
+  journoStrongestSeason: string;
+  journoApproxSowingTime: string;
+  journoIgnoresIrrigation: string;
+  journoRainfallCoverageLabel: string;
+  journoCoveredOfNeed: string;
+  journoUnverifiedWaterNeed: string;
+  journoHonestyAdvice: string;
+  journoCrossBasisNote: string;
+  journoSeeMoreBtn: string;
+  journoChangeCropBtn: string;
+  journoStartOverBtn: string;
+
   // Localized crop names
   crops: Record<string, string>;
 }
@@ -152,6 +186,39 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     helpCurrentCrop: "Select what you usually plant in Maha (Oct–Mar) and Yala (Apr–Sep). This forms Strategy A to see how much seasonal rain naturally covers your crops.",
     helpConsideredCrops: "Select other crops suitable for the Dry Zone (such as green gram or cowpea) that you might want to try. The engine will build legume and diversified comparison strategies.",
     helpResults: "These cards compare rainfall coverage (whether rain alone meets crop water needs) and soil health. They are not yield predictions. Tap 'Open Expert Details' for full charts and soil tests.",
+
+    journoLangTitle: "Choose language",
+    journoLangSubtitle: "Select your preferred language",
+    journoRoleTitle: "What is your role?",
+    journoRoleSubtitle: "We tailor the guide to your needs",
+    journoRoleFarmer: "Farmer",
+    journoRoleFarmerDesc: "Simple rain timing & crop rotation guide",
+    journoRoleResearcher: "Researcher",
+    journoRoleResearcherDesc: "Expert climate data, charts & soil models",
+    journoLocTitle: "Where is your farm?",
+    journoLocSubtitle: "We use 11 years of NASA satellite rainfall data for your area",
+    journoUseMyLocation: "📍 Use my location",
+    journoLocating: "Finding your location...",
+    journoOrSelectArea: "Or choose an area preset:",
+    journoNotStoredNote: "🔒 Location is used only to fetch NASA rain data and is never stored or shared.",
+    journoCropTitle: "Select your crop",
+    journoCropSubtitle: "Pick one of the 5 verified Dry Zone crops",
+    journoCropSelectPlaceholder: "Choose a crop...",
+    journoContinueBtn: "Continue →",
+    journoBackBtn: "← Back",
+    journoRainHeader: "Rain-supported window",
+    journoRainSubtitle: "11-year NASA satellite observation",
+    journoStrongestSeason: "Strongest rain window",
+    journoApproxSowingTime: "Sowing time",
+    journoIgnoresIrrigation: "Assumes rainfed cultivation; ignores irrigation.",
+    journoRainfallCoverageLabel: "Rainfall coverage",
+    journoCoveredOfNeed: "covered by seasonal rain",
+    journoUnverifiedWaterNeed: "Water requirement in mm unverified in reviewed Sri Lanka literature.",
+    journoHonestyAdvice: "Supports farmers, does not replace local advice.",
+    journoCrossBasisNote: "Note: Rice measures total requirement (including puddling and standing water); legume values measure crop water use only.",
+    journoSeeMoreBtn: "See more details",
+    journoChangeCropBtn: "Change crop",
+    journoStartOverBtn: "Start over",
 
     crops: {
       rice: "Rice (Paddy)",
@@ -233,6 +300,39 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     helpConsideredCrops: "මුං ඇට හෝ කවුපි වැනි ඔබ කැමති වෙනත් බෝග තෝරන්න. එමඟින් පස සරු කරන විකල්ප සකස් වේ.",
     helpResults: "මෙම කාඩ්පත් මඟින් වැසි ජලය ප්‍රමාණවත් බව සහ පාංශු සෞඛ්‍යය සසඳයි. මෙය අස්වැන්න පිළිබඳ පුරෝකථනයක් නොවේ.",
 
+    journoLangTitle: "භාෂාව තෝරන්න",
+    journoLangSubtitle: "ඔබ භාවිතා කිරීමට කැමති භාෂාව තෝරන්න",
+    journoRoleTitle: "ඔබගේ භූමිකාව කුමක්ද?",
+    journoRoleSubtitle: "ඔබගේ අවශ්‍යතාවය අනුව මඟපෙන්වීම සකසමු",
+    journoRoleFarmer: "ගොවියෙකු",
+    journoRoleFarmerDesc: "සරල වැසි කාලසටහන සහ බෝග මාරු මඟපෙන්වීම",
+    journoRoleResearcher: "පර්යේෂකයෙකු",
+    journoRoleResearcherDesc: "විශේෂඥ දේශගුණ දත්ත, ප්‍රස්ථාර සහ පාංශු ආකෘති",
+    journoLocTitle: "ඔබේ ගොවිපොළ කොහේද?",
+    journoLocSubtitle: "ඔබේ ප්‍රදේශය සඳහා වසර 11 ක නාසා වැසි දත්ත භාවිත කෙරේ",
+    journoUseMyLocation: "📍 මගේ වත්මන් ස්ථානය",
+    journoLocating: "ස්ථානය සොයමින් පවතී...",
+    journoOrSelectArea: "නැතහොත් කෘෂිකාර්මික ප්‍රදේශයක් තෝරන්න:",
+    journoNotStoredNote: "🔒 ඔබේ ස්ථානය නාසා දත්ත ලබාගැනීමට පමණක් භාවිත වන අතර කිසිසේත් ගබඩා නොකෙරේ.",
+    journoCropTitle: "ඔබේ බෝගය තෝරන්න",
+    journoCropSubtitle: "වියළි කලාපීය ප්‍රධාන බෝග 5 න් එකක් තෝරන්න",
+    journoCropSelectPlaceholder: "බෝගයක් තෝරන්න...",
+    journoContinueBtn: "ඉදිරියට →",
+    journoBackBtn: "← ආපසු",
+    journoRainHeader: "වැසි ආධාරක වගා කාලය",
+    journoRainSubtitle: "වසර 11 ක නාසා චන්ද්‍රිකා නිරීක්ෂණ",
+    journoStrongestSeason: "වැඩිම වැසි ආවරණයක් සහිත කන්නය",
+    journoApproxSowingTime: "වපුරන කාලය",
+    journoIgnoresIrrigation: "වැසි ජලයෙන් පමණක් වගා කරන බව උපකල්පනය කරයි; වාරි ජලය නොසලකයි.",
+    journoRainfallCoverageLabel: "වැසි ආවරණය",
+    journoCoveredOfNeed: "වැසි ජලයෙන් ආවරණය වේ",
+    journoUnverifiedWaterNeed: "ශ්‍රී ලංකා පර්යේෂණ ලේඛනවල ජල අවශ්‍යතාවය (මි.මී.) තහවුරු කර නොමැත.",
+    journoHonestyAdvice: "ගොවීන්ට මඟපෙන්වීමක් පමණි; ප්‍රාදේශීය කෘෂි උපදෙස් වෙනුවට භාවිත කළ නොහැක.",
+    journoCrossBasisNote: "සටහන: වී සඳහා මඩ කිරීම ඇතුළු මුළු ජල අවශ්‍යතාවය ගණනය කරන අතර, රනිල බෝග සඳහා ශාකයේ ජල පරිභෝජනය පමණක් ගණනය කෙරේ.",
+    journoSeeMoreBtn: "වැඩිදුර විස්තර බලන්න",
+    journoChangeCropBtn: "බෝගය මාරු කරන්න",
+    journoStartOverBtn: "මුල සිට අරඹන්න",
+
     crops: {
       rice: "වී (Paddy)",
       green_gram: "මුං ඇට (Green Gram)",
@@ -312,6 +412,39 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     helpCurrentCrop: "பெரும்போகம் மற்றும் சிறுபோகத்தில் நீங்கள் பொதுவாக பயிரிடும் பயிரைத் தேர்வுசெய்யவும்.",
     helpConsideredCrops: "பயறு அல்லது தட்டப்பயறு போன்ற நீங்கள் விரும்பும் மாற்றுப் பயிர்களைத் தேர்ந்தெடுக்கவும்.",
     helpResults: "இந்த அட்டைகள் மழைநீர் போதுமானதா மற்றும் மண் ஆரோக்கியத்தை ஒப்பிடுகின்றன. இது மகசூல் கணிப்பு அல்ல.",
+
+    journoLangTitle: "மொழியைத் தேர்வுசெய்க",
+    journoLangSubtitle: "உங்கள் விருப்பமான மொழியைத் தேர்ந்தெடுக்கவும்",
+    journoRoleTitle: "உங்கள் பங்கு என்ன?",
+    journoRoleSubtitle: "உங்கள் தேவைக்கு ஏற்ப வழிகாட்டியை அமைக்கிறோம்",
+    journoRoleFarmer: "விவசாயி",
+    journoRoleFarmerDesc: "எளிய மழைக்கால அட்டவணை மற்றும் பயிர் சுழற்சி வழிகாட்டி",
+    journoRoleResearcher: "ஆராய்ச்சியாளர்",
+    journoRoleResearcherDesc: "நிபுணர் வானிலை தரவு, விளக்கப்படங்கள் மற்றும் மண் மாதிரிகள்",
+    journoLocTitle: "உங்கள் பண்ணை எங்குள்ளது?",
+    journoLocSubtitle: "உங்கள் பகுதிக்கான 11 ஆண்டுகால நாசா மழைத் தரவைப் பயன்படுத்துகிறோம்",
+    journoUseMyLocation: "📍 எனது இருப்பிடம்",
+    journoLocating: "இருப்பிடம் கண்டறியப்படுகிறது...",
+    journoOrSelectArea: "அல்லது ஒரு விவசாயப் பகுதியைத் தேர்வுசெய்யவும்:",
+    journoNotStoredNote: "🔒 உங்கள் இருப்பிடம் நாசா தரவை வினவ மட்டுமே பயன்படுகிறது; ஒருபோதும் சேமிக்கப்படாது.",
+    journoCropTitle: "பயிரைத் தேர்ந்தெடுக்கவும்",
+    journoCropSubtitle: "சரிபார்க்கப்பட்ட 5 உலர் வலயப் பயிர்களில் ஒன்றைத் தேர்வுசெய்க",
+    journoCropSelectPlaceholder: "ஒரு பயிரைத் தேர்ந்தெடுக்கவும்...",
+    journoContinueBtn: "தொடரவும் →",
+    journoBackBtn: "← பின்செல்",
+    journoRainHeader: "மழை ஆதரவு சாகுபடி பருவம்",
+    journoRainSubtitle: "11 ஆண்டுகால நாசா செயற்கைக்கோள் தரவு",
+    journoStrongestSeason: "வலுவான மழை ஆதரவு பருவம்",
+    journoApproxSowingTime: "விதைப்பு நேரம்",
+    journoIgnoresIrrigation: "மானாவாரி சாகுபடியை அடிப்படையாகக் கொண்டது; நீர்ப்பாசனத்தைக் கணக்கில் கொள்ளாது.",
+    journoRainfallCoverageLabel: "மழை நீர் பூர்த்தி",
+    journoCoveredOfNeed: "பருவ மழையால் பூர்த்தி செய்யப்படுகிறது",
+    journoUnverifiedWaterNeed: "ஆய்வு செய்யப்பட்ட இலங்கை ஆவணங்களில் நீர் தேவை (மிமீ) சரிபார்க்கப்படவில்லை.",
+    journoHonestyAdvice: "விவசாயிகளுக்கு வழிகாட்டுதல் மட்டுமே; உள்ளூர் விவசாய ஆலோசனைகளுக்கு மாற்றாகாது.",
+    journoCrossBasisNote: "குறிப்பு: நெல்லுக்கு நில தயாரிப்பு உட்பட மொத்தத் தேவை கணக்கிடப்படுகிறது; பயறு வகைகளுக்கு பயிர் நீர் பயன்பாடு மட்டுமே.",
+    journoSeeMoreBtn: "கூடுதல் விவரங்களைப் பார்க்க",
+    journoChangeCropBtn: "பயிரை மாற்றவும்",
+    journoStartOverBtn: "மீண்டும் தொடங்க",
 
     crops: {
       rice: "நெல் (Paddy)",
