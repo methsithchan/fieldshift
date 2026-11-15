@@ -22,8 +22,8 @@ export default function HelpSheet({
 }: HelpSheetProps) {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
+  const [isFallback, setIsFallback] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
@@ -35,7 +35,7 @@ export default function HelpSheet({
 
     setLoading(true);
     setAnswer(null);
-    setErrorMsg(null);
+    setIsFallback(false);
 
     try {
       const res = await fetch("/api/help", {
@@ -44,20 +44,26 @@ export default function HelpSheet({
         body: JSON.stringify({
           question: question.trim(),
           screen: screenId,
-          screenContext: screenContextText,
+          context: screenContextText,
           language: lang,
-          staticHelp: staticHelpText,
         }),
       });
 
       const data = await res.json();
-      if (res.ok && data?.answer) {
+
+      if (data?.answer) {
+        // Genuine AI response
         setAnswer(data.answer);
+        setIsFallback(false);
       } else {
+        // API error / not configured / quota — show static help + notice
         setAnswer(staticHelpText);
+        setIsFallback(true);
       }
     } catch {
+      // Network failure — show static help + notice
       setAnswer(staticHelpText);
+      setIsFallback(true);
     } finally {
       setLoading(false);
     }
@@ -119,26 +125,37 @@ export default function HelpSheet({
             <button
               type="submit"
               disabled={loading || !question.trim()}
-              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-xs hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-xs hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? t.askingStatus : t.askButton}
+              {loading ? (
+                <>
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>{t.askingStatus}</span>
+                </>
+              ) : (
+                t.askButton
+              )}
             </button>
           </form>
 
-          {/* AI Response Display */}
+          {/* AI / Fallback Response Display */}
           {answer && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm text-emerald-950 space-y-1.5 animate-in fade-in">
-              <div className="text-xs font-bold text-emerald-800 flex items-center gap-1">
-                <span>🌱</span>
-                <span>Guidance:</span>
+            <div
+              className={`rounded-xl border p-4 text-sm space-y-1.5 animate-in fade-in ${
+                isFallback
+                  ? "border-amber-200 bg-amber-50/80 text-amber-950"
+                  : "border-emerald-200 bg-emerald-50/80 text-emerald-950"
+              }`}
+            >
+              <div
+                className={`text-xs font-bold flex items-center gap-1 ${
+                  isFallback ? "text-amber-800" : "text-emerald-800"
+                }`}
+              >
+                <span>{isFallback ? "ℹ️" : "🌱"}</span>
+                <span>{isFallback ? "Help is unavailable right now" : "Guidance:"}</span>
               </div>
               <p className="leading-relaxed">{answer}</p>
-            </div>
-          )}
-
-          {errorMsg && (
-            <div className="rounded-lg bg-red-50 p-3 text-xs text-red-700">
-              {errorMsg}
             </div>
           )}
         </div>

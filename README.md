@@ -51,17 +51,24 @@ No database. No user accounts. No IoT devices.
 
 ## Environment Variables
 
-For the optional farmer Q&A help sheet, add a `.env.local` file (this file is ignored by Git in `.gitignore` and is never committed or sent to the client):
+Copy `.env.example` to `.env.local` and add your key. This file is git-ignored and must never be committed:
 
 ```bash
-# Google AI Studio API Key (server-side only)
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-1.5-flash
+cp .env.example .env.local
+# Then edit .env.local and paste your Google AI Studio API key
 ```
 
-> **Google AI Studio Free Tier Specifications for `gemini-1.5-flash`:**
-> - Rate limits: 15 Requests Per Minute (RPM), 1,000,000 Tokens Per Minute (TPM), 1,500 Requests Per Day (RPD).
-> - If `GEMINI_API_KEY` is not provided or fails, the Help Sheet automatically falls back to static pre-written expert guidance in the farmer's selected language.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GEMINI_API_KEY` | Yes (for AI help) | Google AI Studio API key. Get one free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Server-side only; never sent to the client. |
+| `GEMINI_MODEL` | No | Override the default model (`gemini-2.5-flash`). |
+
+> **API details (sourced from [ai.google.dev](https://ai.google.dev/gemini-api/docs/text-generation), Nov 2026):**
+> - Endpoint: `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
+> - Key is sent via the `x-goog-api-key` HTTP header (not in the URL).
+> - Default model: `gemini-2.5-flash` (current free-tier flash model).
+> - Free tier limits: 15 RPM, 1M TPM, 1,500 RPD.
+> - If `GEMINI_API_KEY` is absent, invalid, or the API errors, the Help Sheet falls back to static pre-written guidance in the farmer's language and shows "Help is unavailable right now".
 
 ## Data Sources
 
