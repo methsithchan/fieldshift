@@ -14,6 +14,14 @@ export interface TranslationStrings {
   askingStatus: string;
   helpDisclaimer: string;
   
+  // Role Selection (step 0)
+  roleTitle: string;
+  roleSubtitle: string;
+  farmerRoleLabel: string;
+  farmerRoleHint: string;
+  researcherRoleLabel: string;
+  researcherRoleHint: string;
+
   // Step 1: Language
   langStepTitle: string;
   langStepSubtitle: string;
@@ -92,6 +100,13 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     langStepTitle: "Choose Your Language",
     langStepSubtitle: "Select the language you want to use throughout the guide.",
 
+    roleTitle: "Who are you?",
+    roleSubtitle: "Choose your role to get started.",
+    farmerRoleLabel: "🌾 I am a Farmer",
+    farmerRoleHint: "Simple crop rotation guide",
+    researcherRoleLabel: "🔬 I am a Researcher",
+    researcherRoleHint: "Expert data, charts & soil analysis",
+
     locStepTitle: "Where is your farm?",
     locStepSubtitle: "We use 11 years of NASA satellite rainfall data for your area.",
     useMyLocation: "📍 Use My Location",
@@ -165,6 +180,13 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     langStepTitle: "ඔබගේ භාෂාව තෝරන්න",
     langStepSubtitle: "ඔබ භාවිතා කිරීමට කැමති භාෂාව තෝරන්න.",
 
+    roleTitle: "ඔබ කවුද?",
+    roleSubtitle: "ඔබේ භූමිකාව තෝරන්න.",
+    farmerRoleLabel: "🌾 මම ගොවියෙකු",
+    farmerRoleHint: "සරල බෝග මාරු මාර්ගෝපදේශය",
+    researcherRoleLabel: "🔬 මම පර්යේෂකයෙකු",
+    researcherRoleHint: "විශේෂඥ දත්ත, ප්‍රස්ථාර සහ පාංශු විශ්ලේෂණය",
+
     locStepTitle: "ඔබේ ගොවිපොළ පිහිටියේ කොහේද?",
     locStepSubtitle: "ඔබේ ප්‍රදේශය සඳහා වසර 11 ක නාසා (NASA) චන්ද්‍රිකා වැසි දත්ත භාවිත කෙරේ.",
     useMyLocation: "📍 මගේ වත්මන් ස්ථානය ගන්න",
@@ -237,6 +259,13 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
 
     langStepTitle: "உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்",
     langStepSubtitle: "பயன்படுத்த விரும்பும் மொழியைத் தேர்வுசெய்யவும்.",
+
+    roleTitle: "நீங்கள் யார்?",
+    roleSubtitle: "உங்கள் பங்கைத் தேர்ந்தெடுக்கவும்.",
+    farmerRoleLabel: "🌾 நான் ஒரு விவசாயி",
+    farmerRoleHint: "எளிய பயிர் சுழற்சி வழிகாட்டி",
+    researcherRoleLabel: "🔬 நான் ஒரு ஆராய்ச்சியாளர்",
+    researcherRoleHint: "நிபுணர் தரவு, விளக்கப்படங்கள் மற்றும் மண் பகுப்பாய்வு",
 
     locStepTitle: "உங்கள் பண்ணை எங்குள்ளது?",
     locStepSubtitle: "உங்கள் பகுதிக்கான நாசாவின் 11 ஆண்டுகால மழைவீழ்ச்சி தரவு பயன்படுத்தப்படுகிறது.",
