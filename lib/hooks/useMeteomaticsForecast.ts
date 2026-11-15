@@ -53,8 +53,10 @@ export function useMeteomaticsForecast(
 
     async function fetchForecast() {
       try {
+        const roundedLat = Number(lat.toFixed(2));
+        const roundedLon = Number(lon.toFixed(2));
         const res = await fetch(
-          `/api/meteomatics?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&parameters=precip_1h:mm`
+          `/api/meteomatics?lat=${roundedLat}&lon=${roundedLon}&parameters=precip_1h:mm`
         );
 
         if (!res.ok) {

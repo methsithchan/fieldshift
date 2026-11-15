@@ -116,6 +116,12 @@ export interface TranslationStrings {
   journoUsualWeeklyRain: (mm: number, source: string) => string;
   journoForecastAttribution: string;
   journoSriLankaTimeLabel: string;
+  outsideSriLankaTitle: string;
+  outsideSriLankaDesc: string;
+  noRainfallDataForCrop: string;
+  noRainfallDataDesc: string;
+  sowAround: (range: string) => string;
+  waterCoveragePlain: (pct: number) => string;
 
   // Localized crop names
   crops: Record<string, string>;
@@ -151,7 +157,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     locStepSubtitle: "We use 11 years of NASA satellite rainfall data for your area.",
     useMyLocation: "📍 Use My Location",
     locating: "Detecting location...",
-    noStoreNotice: "Privacy note: We do not save or share your location. It is only used to look up local seasonal rainfall.",
+    noStoreNotice: "Used only to look up rain data for your area.",
     orSelectPreset: "Or choose an agricultural area:",
     selectDistrictPrompt: "Select an area preset",
     locDeniedError: "Could not access location. Please pick your area from the list below.",
@@ -206,7 +212,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoUseMyLocation: "📍 Use my location",
     journoLocating: "Finding your location...",
     journoOrSelectArea: "Or choose an area preset:",
-    journoNotStoredNote: "🔒 Location is used only to fetch NASA rain data and is never stored or shared.",
+    journoNotStoredNote: "🔒 Used only to look up rain data for your area.",
     journoCropTitle: "Select your crop",
     journoCropSubtitle: "Pick one of the 5 verified Dry Zone crops",
     journoCropSelectPlaceholder: "Choose a crop...",
@@ -231,6 +237,12 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoUsualWeeklyRain: (mm: number, source: string) => `Usual: ${mm} mm per week, ${source}`,
     journoForecastAttribution: "Forecast: Meteomatics API (supplementary model) · Climatology: NASA POWER",
     journoSriLankaTimeLabel: "Sri Lanka Time (UTC+5:30)",
+    outsideSriLankaTitle: "This tool is built for Sri Lanka's Dry Zone",
+    outsideSriLankaDesc: "The selected coordinates are outside Sri Lanka. Please pick a location within Sri Lanka.",
+    noRainfallDataForCrop: "No rainfall coverage data for this crop",
+    noRainfallDataDesc: "Water requirements for this crop are not verified in reviewed Sri Lanka research.",
+    sowAround: (range: string) => `Sow around: ${range}`,
+    waterCoveragePlain: (pct: number) => `Natural rainfall meets about ${pct}% of seasonal crop water need`,
 
     crops: {
       rice: "Rice (Paddy)",
@@ -270,7 +282,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     locStepSubtitle: "ඔබේ ප්‍රදේශය සඳහා වසර 11 ක නාසා (NASA) චන්ද්‍රිකා වැසි දත්ත භාවිත කෙරේ.",
     useMyLocation: "📍 මගේ වත්මන් ස්ථානය ගන්න",
     locating: "ස්ථානය සොයමින් පවතී...",
-    noStoreNotice: "පෞද්ගලිකත්ව සටහන: අපි ඔබගේ ස්ථාන තොරතුරු ගබඩා නොකරමු. එය යොදාගන්නේ ප්‍රදේශයේ වැසි දත්ත ලබාගැනීමට පමණි.",
+    noStoreNotice: "ඔබේ ප්‍රදේශයේ වැසි දත්ත ලබාගැනීමට පමණක් භාවිත කෙරේ.",
     orSelectPreset: "නැතහොත් කෘෂිකාර්මික ප්‍රදේශයක් තෝරන්න:",
     selectDistrictPrompt: "ප්‍රදේශයක් තෝරන්න",
     locDeniedError: "ස්ථානය ලබා ගැනීමට නොහැකි විය. කරුණාකර පහත ලැයිස්තුවෙන් ප්‍රදේශය තෝරන්න.",
@@ -325,7 +337,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoUseMyLocation: "📍 මගේ වත්මන් ස්ථානය",
     journoLocating: "ස්ථානය සොයමින් පවතී...",
     journoOrSelectArea: "නැතහොත් කෘෂිකාර්මික ප්‍රදේශයක් තෝරන්න:",
-    journoNotStoredNote: "🔒 ඔබේ ස්ථානය නාසා දත්ත ලබාගැනීමට පමණක් භාවිත වන අතර කිසිසේත් ගබඩා නොකෙරේ.",
+    journoNotStoredNote: "🔒 ඔබේ ප්‍රදේශයේ වැසි දත්ත ලබාගැනීමට පමණක් භාවිත කෙරේ.",
     journoCropTitle: "ඔබේ බෝගය තෝරන්න",
     journoCropSubtitle: "වියළි කලාපීය ප්‍රධාන බෝග 5 න් එකක් තෝරන්න",
     journoCropSelectPlaceholder: "බෝගයක් තෝරන්න...",
@@ -350,6 +362,12 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoUsualWeeklyRain: (mm: number, source: string) => `සාමාන්‍යය: සතියකට මි.මී. ${mm}, ${source}`,
     journoForecastAttribution: "පුරෝකථනය: Meteomatics API (අතිරේක ආකෘතිය) · දේශගුණය: NASA POWER",
     journoSriLankaTimeLabel: "ශ්‍රී ලංකා වේලාව (UTC+5:30)",
+    outsideSriLankaTitle: "මෙම මෙවලම සකසා ඇත්තේ ශ්‍රී ලංකාවේ වියළි කලාපය සඳහා පමණි",
+    outsideSriLankaDesc: "තෝරාගත් ස්ථානය ශ්‍රී ලංකාවෙන් පිටත පිහිටා ඇත. කරුණාකර ශ්‍රී ලංකාව තුළ කෘෂිකාර්මික ප්‍රදේශයක් තෝරන්න.",
+    noRainfallDataForCrop: "මෙම බෝගය සඳහා වැසි ආවරණ දත්ත නොමැත",
+    noRainfallDataDesc: "ශ්‍රී ලංකා පර්යේෂණ ලේඛනවල ජල අවශ්‍යතාවය තහවුරු කර නොමැත.",
+    sowAround: (range: string) => `වපුරන කාලය: ${range}`,
+    waterCoveragePlain: (pct: number) => `ස්වාභාවික වැසි ජලයෙන් සෘතුමය ජල අවශ්‍යතාවයෙන් ${pct}% ක් පමණ ආවරණය වේ`,
 
     crops: {
       rice: "වී (Paddy)",
@@ -389,7 +407,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     locStepSubtitle: "உங்கள் பகுதிக்கான நாசாவின் 11 ஆண்டுகால மழைவீழ்ச்சி தரவு பயன்படுத்தப்படுகிறது.",
     useMyLocation: "📍 எனது அமைவிடத்தைப் பயன்படுத்தவும்",
     locating: "அமைவிடம் அறியப்படுகிறது...",
-    noStoreNotice: "தனியுரிமைக் குறிப்பு: உங்கள் அமைவிடத்தை நாங்கள் சேமிப்பதில்லை. உள்ளூர் மழையளவை அறிய மட்டுமே இது பயன்படுகிறது.",
+    noStoreNotice: "உங்கள் பகுதிக்கான மழைத் தரவைப் பார்க்க மட்டுமே பயன்படுகிறது.",
     orSelectPreset: "அல்லது விவசாயப் பகுதியைத் தேர்ந்தெடுக்கவும்:",
     selectDistrictPrompt: "ஒரு பகுதியைத் தேர்ந்தெடுக்கவும்",
     locDeniedError: "அமைவிடத்தை அறிய முடியவில்லை. கீழே உள்ள பட்டியலில் இருந்து தேர்ந்தெடுக்கவும்.",
@@ -444,7 +462,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoUseMyLocation: "📍 எனது இருப்பிடம்",
     journoLocating: "இருப்பிடம் கண்டறியப்படுகிறது...",
     journoOrSelectArea: "அல்லது ஒரு விவசாயப் பகுதியைத் தேர்வுசெய்யவும்:",
-    journoNotStoredNote: "🔒 உங்கள் இருப்பிடம் நாசா தரவை வினவ மட்டுமே பயன்படுகிறது; ஒருபோதும் சேமிக்கப்படாது.",
+    journoNotStoredNote: "🔒 உங்கள் பகுதிக்கான மழைத் தரவைப் பார்க்க மட்டுமே பயன்படுகிறது.",
     journoCropTitle: "பயிரைத் தேர்ந்தெடுக்கவும்",
     journoCropSubtitle: "சரிபார்க்கப்பட்ட 5 உலர் வலயப் பயிர்களில் ஒன்றைத் தேர்வுசெய்க",
     journoCropSelectPlaceholder: "ஒரு பயிரைத் தேர்ந்தெடுக்கவும்...",
@@ -469,6 +487,12 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoUsualWeeklyRain: (mm: number, source: string) => `வழக்கமானது: வாரத்திற்கு ${mm} மிமீ, ${source}`,
     journoForecastAttribution: "முன்னறிவிப்பு: Meteomatics API (துணை மாதிரி) · காலநிலை: NASA POWER",
     journoSriLankaTimeLabel: "இலங்கை நேரம் (UTC+5:30)",
+    outsideSriLankaTitle: "இந்தக் கருவி இலங்கையின் உலர் வலயத்திற்காக உருவாக்கப்பட்டது",
+    outsideSriLankaDesc: "தேர்ந்தெடுக்கப்பட்ட இடம் இலங்கைக்கு வெளியே உள்ளது. இலங்கைக்குள் ஒரு விவசாயப் பகுதியைத் தேர்வுசெய்யவும்.",
+    noRainfallDataForCrop: "இந்த பயிருக்கு மழை நீர் பூர்த்தி தரவு இல்லை",
+    noRainfallDataDesc: "ஆய்வு செய்யப்பட்ட இலங்கை ஆவணங்களில் நீர் தேவை சரிபார்க்கப்படவில்லை.",
+    sowAround: (range: string) => `விதைப்பு காலம்: ${range}`,
+    waterCoveragePlain: (pct: number) => `இயற்கை மழை பருவ பயிர் நீர் தேவையில் சுமார் ${pct}% ஐ பூர்த்தி செய்கிறது`,
 
     crops: {
       rice: "நெல் (Paddy)",

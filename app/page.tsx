@@ -28,6 +28,36 @@ const LOCATION_PRESETS = [
 
 const CROP_IDS = ["rice", "green_gram", "cowpea", "black_gram", "maize"] as const;
 
+// Geographic boundaries for Sri Lanka and Dry Zone
+const SRI_LANKA_BOX = { latMin: 5.8, latMax: 10.0, lonMin: 79.5, lonMax: 82.0 };
+const DRY_ZONE_BOX = { latMin: 7.0, latMax: 10.0, lonMin: 79.5, lonMax: 81.5 };
+
+function getSowingMonthRange(
+  cropId: typeof CROP_IDS[number],
+  seasonId: "maha" | "yala",
+  lang: LanguageCode
+): string {
+  if (cropId === "rice" && seasonId === "maha") {
+    if (lang === "si") return "ඔක්තෝබර් – නොවැම්බර්";
+    if (lang === "ta") return "அக்டோபர் – நவம்பர்";
+    return "October – November";
+  }
+  if (cropId === "green_gram" && seasonId === "maha") {
+    if (lang === "si") return "නොවැම්බර්";
+    if (lang === "ta") return "நவம்பர்";
+    return "November";
+  }
+  if (seasonId === "maha") {
+    if (lang === "si") return "ඔක්තෝබර්";
+    if (lang === "ta") return "அக்டோபர்";
+    return "October";
+  }
+  // Yala
+  if (lang === "si") return "අප්‍රේල්";
+  if (lang === "ta") return "ஏப்ரல்";
+  return "April";
+}
+
 export default function Home() {
   const router = useRouter();
 
@@ -103,6 +133,20 @@ export default function Home() {
     strongest.waterCoverageRatio !== null
       ? Math.round(strongest.waterCoverageRatio * 100)
       : null;
+
+  // Region Guard boundaries
+  const isOutsideSriLanka =
+    lat < SRI_LANKA_BOX.latMin ||
+    lat > SRI_LANKA_BOX.latMax ||
+    lon < SRI_LANKA_BOX.lonMin ||
+    lon > SRI_LANKA_BOX.lonMax;
+
+  const isOutsideDryZone =
+    !isOutsideSriLanka &&
+    (lat < DRY_ZONE_BOX.latMin ||
+      lat > DRY_ZONE_BOX.latMax ||
+      lon < DRY_ZONE_BOX.lonMin ||
+      lon > DRY_ZONE_BOX.lonMax);
 
   // Localized Season Name
   const displaySeasonName =
@@ -511,201 +555,222 @@ export default function Home() {
              ══════════════════════════════════════════ */}
           {step === 5 && (
             <div className="animate-in fade-in duration-200">
-              {/* Header */}
-              <div className="mb-4">
-                <span className="inline-block px-3 py-1 rounded-full bg-neutral-100 text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
-                  {t.journoStrongestSeason}
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight leading-tight">
-                  {t.journoRainHeader}
-                </h1>
-                <p className="text-xs text-neutral-400 font-medium mt-0.5">
-                  {locationName} · {t.crops[selectedCrop] || CROPS[selectedCrop].name}
-                </p>
-              </div>
-
-              {/* NASA Loading State */}
-              {climateLoading && (
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-6 text-center text-neutral-600 my-4">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-black border-t-transparent mb-2" />
-                  <p className="text-xs font-semibold">{t.journoLocating}</p>
-                </div>
-              )}
-
-              {climateError && (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 my-3">
-                  ⚠️ Climate data notice: {climateError}. Showing standard Dry Zone seasonal indicators.
-                </div>
-              )}
-
-              {/* Core Hero Result Box */}
-              <div className="rounded-2xl bg-neutral-900 text-white p-5 my-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                    {displaySeasonName}
-                  </span>
-                  {strongest.isUnverifiedWaterNeed && (
-                    <span className="rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 border border-amber-500/30">
-                      {t.partialBadge}
-                    </span>
-                  )}
-                </div>
-
-                {/* Big Number Display */}
-                <div>
-                  {coveragePercent !== null ? (
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-                        {coveragePercent}%
-                      </span>
-                      <span className="text-sm font-medium text-neutral-300">
-                        {t.journoCoveredOfNeed}
-                      </span>
-                    </div>
-                  ) : (
-                    <div>
-                      <span className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-                        ~{strongest.windowRainfallMm ?? "—"} mm
-                      </span>
-                      <p className="text-xs text-neutral-300 mt-1">
-                        {t.journoUnverifiedWaterNeed}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Sowing Timing */}
-                <div className="pt-3 border-t border-neutral-800 flex items-center justify-between text-xs">
-                  <span className="text-neutral-400 font-medium">
-                    {t.journoApproxSowingTime}:
-                  </span>
-                  <span className="font-bold text-white text-right">
-                    ~{strongest.sowingStartDay}{" "}
-                    {strongest.sowingStartMonth === 10
-                      ? "Oct"
-                      : strongest.sowingStartMonth === 11
-                      ? "Nov"
-                      : "Apr"}{" "}
-                    <span className="text-[11px] text-neutral-400 font-normal">
-                      ({strongest.sowingTimingText})
-                    </span>
-                  </span>
-                </div>
-
-                {/* Ignores Irrigation Line */}
-                <p className="text-[11px] text-neutral-400 italic pt-1 border-t border-neutral-800/60">
-                  {t.journoIgnoresIrrigation}
-                </p>
-              </div>
-
-              {/* Honesty Items */}
-              <div className="space-y-2 mb-6">
-                {/* Rice cross-basis note */}
-                {selectedCrop === "rice" && (
-                  <p className="text-[11px] text-neutral-500 bg-neutral-100 p-2.5 rounded-xl leading-relaxed">
-                    {t.journoCrossBasisNote}
+              {/* Outside Sri Lanka Guard */}
+              {isOutsideSriLanka ? (
+                <div className="rounded-2xl border border-amber-300 bg-amber-50 p-6 text-center space-y-3 my-4">
+                  <span className="text-3xl block">🇱🇰</span>
+                  <h2 className="text-base sm:text-lg font-bold text-amber-950">
+                    {t.outsideSriLankaTitle}
+                  </h2>
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    {t.outsideSriLankaDesc}
                   </p>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setStep(3)}
+                    className="mt-2 min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-semibold px-6 py-3 transition active:scale-[0.98] inline-flex items-center gap-1.5"
+                  >
+                    <span>{t.journoBackBtn}</span>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Warning banner if inside Sri Lanka but outside approximate Dry Zone */}
+                  {isOutsideDryZone && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 mb-4 leading-relaxed">
+                      {t.outsideDryZoneWarning}
+                    </div>
+                  )}
 
-                {/* General Disclaimer */}
-                <p className="text-[11px] text-neutral-400 leading-relaxed text-center">
-                  {t.journoHonestyAdvice}
-                </p>
-              </div>
+                  {/* Header */}
+                  <div className="mb-4">
+                    <span className="inline-block px-3 py-1 rounded-full bg-neutral-100 text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                      {t.journoStrongestSeason}
+                    </span>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight leading-tight">
+                      {t.journoRainHeader}
+                    </h1>
+                    <p className="text-xs text-neutral-400 font-medium mt-0.5">
+                      {locationName} · {t.crops[selectedCrop] || CROPS[selectedCrop].name}
+                    </p>
+                  </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-2">
-                {/* See More Toggle Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowSeeMore((prev) => !prev)}
-                  className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-sm py-3 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-1.5"
-                >
-                  <span>{showSeeMore ? t.journoSeeMoreCloseBtn : t.journoSeeMoreBtn}</span>
-                  <span>{showSeeMore ? "↑" : "↓"}</span>
-                </button>
+                  {/* NASA Loading State */}
+                  {climateLoading && (
+                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-6 text-center text-neutral-600 my-4">
+                      <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-black border-t-transparent mb-2" />
+                      <p className="text-xs font-semibold">{t.journoLocating}</p>
+                    </div>
+                  )}
 
-                {/* Expanded "See more" Fact Sheet & Forecast Section */}
-                {showSeeMore && (
-                  <div className="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4 space-y-3 animate-in fade-in duration-200 mt-2">
-                    {/* Supplementary Meteomatics Forecast Line (hidden if API fails or no data) */}
-                    {meteoForecast && (
-                      <div className="rounded-xl border border-neutral-200 bg-white p-3.5 space-y-1.5 shadow-2xs">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                          <span>🌧️ {t.journoForecastTitle}</span>
-                          {meteoForecast.updatedAtSriLanka && (
-                            <span className="font-normal text-[10px] text-neutral-400">
-                              {meteoForecast.updatedAtSriLanka} ({t.journoSriLankaTimeLabel})
-                            </span>
-                          )}
+                  {climateError && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 my-3">
+                      ⚠️ Climate data notice: {climateError}. Showing standard Dry Zone seasonal indicators.
+                    </div>
+                  )}
+
+                  {/* Core Hero Result Box */}
+                  <div className="rounded-2xl bg-neutral-900 text-white p-5 my-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                        {displaySeasonName}
+                      </span>
+                      {strongest.isUnverifiedWaterNeed && (
+                        <span className="rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 border border-amber-500/30">
+                          {t.partialBadge}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Big Number / Unverified Data Display */}
+                    <div>
+                      {strongest.isUnverifiedWaterNeed ? (
+                        <div className="space-y-1">
+                          <div className="text-lg sm:text-xl font-bold text-white leading-snug">
+                            {t.noRainfallDataForCrop}
+                          </div>
+                          <p className="text-xs text-neutral-400">
+                            {t.noRainfallDataDesc}
+                          </p>
                         </div>
-
-                        <div className="flex flex-wrap items-baseline gap-2 pt-0.5">
-                          <span className="text-sm font-extrabold text-neutral-900">
-                            {t.journoNext7DaysForecast(meteoForecast.next7DaysMm)}
-                          </span>
-                          {meteoForecast.usualWeeklyMm !== null && (
-                            <span className="text-xs font-medium text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-md">
-                              {t.journoUsualWeeklyRain(
-                                meteoForecast.usualWeeklyMm,
-                                meteoForecast.yearsLabel
-                              )}
-                            </span>
-                          )}
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="text-4xl sm:text-5xl font-black tracking-tight text-white">
+                            {coveragePercent}%
+                          </div>
+                          <p className="text-xs sm:text-sm font-medium text-neutral-300">
+                            {t.waterCoveragePlain(coveragePercent ?? 0)}
+                          </p>
                         </div>
+                      )}
+                    </div>
 
-                        <p className="text-[10px] text-neutral-400 pt-1 border-t border-neutral-100 leading-tight">
-                          {t.journoForecastAttribution}
-                        </p>
-                      </div>
+                    {/* Simple Sowing Timing Line (Month range only) */}
+                    <div className="pt-3 border-t border-neutral-800 flex items-center justify-between text-xs">
+                      <span className="font-semibold text-white">
+                        {t.sowAround(getSowingMonthRange(selectedCrop, strongest.seasonId, lang))}
+                      </span>
+                    </div>
+
+                    {/* Ignores Irrigation Line */}
+                    <p className="text-[11px] text-neutral-400 italic pt-1 border-t border-neutral-800/60">
+                      {t.journoIgnoresIrrigation}
+                    </p>
+                  </div>
+
+                  {/* Honesty Items */}
+                  <div className="space-y-2 mb-6">
+                    {/* Rice cross-basis note */}
+                    {selectedCrop === "rice" && (
+                      <p className="text-[11px] text-neutral-500 bg-neutral-100 p-2.5 rounded-xl leading-relaxed">
+                        {t.journoCrossBasisNote}
+                      </p>
                     )}
 
-                    {/* Both Seasons Rainfall Breakdown */}
-                    <div className="rounded-xl border border-neutral-200 bg-white p-3.5 space-y-2 text-xs">
-                      <div className="font-bold text-neutral-800 uppercase tracking-wider text-[11px]">
-                        Seasonal Sowing Windows ({t.crops[selectedCrop] || CROPS[selectedCrop].name})
-                      </div>
-
-                      {/* Maha */}
-                      <div className="flex items-center justify-between py-1 border-b border-neutral-100">
-                        <div>
-                          <span className="font-bold text-neutral-900">Maha Season</span>
-                          <span className="text-neutral-500 text-[11px] block">
-                            Sowing: ~{windowAnalysis.maha.sowingStartDay}{" "}
-                            {windowAnalysis.maha.sowingStartMonth === 10
-                              ? "Oct"
-                              : windowAnalysis.maha.sowingStartMonth === 11
-                              ? "Nov"
-                              : "Apr"}{" "}
-                            ({windowAnalysis.maha.sowingTimingText})
-                          </span>
-                        </div>
-                        <span className="font-extrabold text-neutral-900 text-right">
-                          {windowAnalysis.maha.waterCoverageRatio !== null
-                            ? `${Math.round(windowAnalysis.maha.waterCoverageRatio * 100)}% rain covered`
-                            : `~${windowAnalysis.maha.windowRainfallMm ?? "—"} mm (unassessed)`}
-                        </span>
-                      </div>
-
-                      {/* Yala */}
-                      <div className="flex items-center justify-between py-1">
-                        <div>
-                          <span className="font-bold text-neutral-900">Yala Season</span>
-                          <span className="text-neutral-500 text-[11px] block">
-                            Sowing: ~{windowAnalysis.yala.sowingStartDay} Apr ({windowAnalysis.yala.sowingTimingText})
-                          </span>
-                        </div>
-                        <span className="font-extrabold text-neutral-900 text-right">
-                          {windowAnalysis.yala.waterCoverageRatio !== null
-                            ? `${Math.round(windowAnalysis.yala.waterCoverageRatio * 100)}% rain covered`
-                            : `~${windowAnalysis.yala.windowRainfallMm ?? "—"} mm (unassessed)`}
-                        </span>
-                      </div>
-                    </div>
+                    {/* General Disclaimer */}
+                    <p className="text-[11px] text-neutral-400 leading-relaxed text-center">
+                      {t.journoHonestyAdvice}
+                    </p>
                   </div>
-                )}
 
-                {/* Change Crop Button */}
+                  {/* Action Buttons */}
+                  <div className="space-y-2">
+                    {/* See More Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowSeeMore((prev) => !prev)}
+                      className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-sm py-3 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-1.5"
+                    >
+                      <span>{showSeeMore ? t.journoSeeMoreCloseBtn : t.journoSeeMoreBtn}</span>
+                      <span>{showSeeMore ? "↑" : "↓"}</span>
+                    </button>
+
+                    {/* Expanded "See more" Fact Sheet & Forecast Section */}
+                    {showSeeMore && (
+                      <div className="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4 space-y-3 animate-in fade-in duration-200 mt-2">
+                        {/* Supplementary Meteomatics Forecast Line (hidden if API fails or no data) */}
+                        {meteoForecast && (
+                          <div className="rounded-xl border border-neutral-200 bg-white p-3.5 space-y-1.5 shadow-2xs">
+                            <div className="flex items-center justify-between text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                              <span>🌧️ {t.journoForecastTitle}</span>
+                              {meteoForecast.updatedAtSriLanka && (
+                                <span className="font-normal text-[10px] text-neutral-400">
+                                  {meteoForecast.updatedAtSriLanka} ({t.journoSriLankaTimeLabel})
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex flex-wrap items-baseline gap-2 pt-0.5">
+                              <span className="text-sm font-extrabold text-neutral-900">
+                                {t.journoNext7DaysForecast(meteoForecast.next7DaysMm)}
+                              </span>
+                              {meteoForecast.usualWeeklyMm !== null && (
+                                <span className="text-xs font-medium text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-md">
+                                  {t.journoUsualWeeklyRain(
+                                    meteoForecast.usualWeeklyMm,
+                                    meteoForecast.yearsLabel
+                                  )}
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="text-[10px] text-neutral-400 pt-1 border-t border-neutral-100 leading-tight">
+                              {t.journoForecastAttribution}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Both Seasons Rainfall Breakdown (Contains class/week sowing details) */}
+                        <div className="rounded-xl border border-neutral-200 bg-white p-3.5 space-y-2 text-xs">
+                          <div className="font-bold text-neutral-800 uppercase tracking-wider text-[11px]">
+                            Seasonal Sowing Windows ({t.crops[selectedCrop] || CROPS[selectedCrop].name})
+                          </div>
+
+                          {/* Maha */}
+                          <div className="flex items-center justify-between py-1.5 border-b border-neutral-100 gap-2">
+                            <div>
+                              <span className="font-bold text-neutral-900 block">Maha Season</span>
+                              <span className="text-neutral-500 text-[11px] block">
+                                Sowing: ~{windowAnalysis.maha.sowingStartDay}{" "}
+                                {windowAnalysis.maha.sowingStartMonth === 10
+                                  ? "Oct"
+                                  : windowAnalysis.maha.sowingStartMonth === 11
+                                  ? "Nov"
+                                  : "Apr"}{" "}
+                                <span className="text-neutral-600 font-medium">({windowAnalysis.maha.sowingTimingText})</span>
+                              </span>
+                            </div>
+                            <span className="font-extrabold text-neutral-900 text-right shrink-0">
+                              {windowAnalysis.maha.waterCoverageRatio !== null
+                                ? `${Math.round(windowAnalysis.maha.waterCoverageRatio * 100)}%`
+                                : `~${windowAnalysis.maha.windowRainfallMm ?? "—"} mm`}
+                            </span>
+                          </div>
+
+                          {/* Yala */}
+                          <div className="flex items-center justify-between py-1.5 gap-2">
+                            <div>
+                              <span className="font-bold text-neutral-900 block">Yala Season</span>
+                              <span className="text-neutral-500 text-[11px] block">
+                                Sowing: ~{windowAnalysis.yala.sowingStartDay} Apr{" "}
+                                <span className="text-neutral-600 font-medium">({windowAnalysis.yala.sowingTimingText})</span>
+                              </span>
+                            </div>
+                            <span className="font-extrabold text-neutral-900 text-right shrink-0">
+                              {windowAnalysis.yala.waterCoverageRatio !== null
+                                ? `${Math.round(windowAnalysis.yala.waterCoverageRatio * 100)}%`
+                                : `~${windowAnalysis.yala.windowRainfallMm ?? "—"} mm`}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Navigation buttons: Change Crop & Start Over */}
+              <div className="space-y-2 mt-3">
                 <button
                   type="button"
                   onClick={() => setStep(4)}
@@ -714,7 +779,6 @@ export default function Home() {
                   {t.journoChangeCropBtn}
                 </button>
 
-                {/* Start Over Button */}
                 <button
                   type="button"
                   onClick={() => setStep(1)}

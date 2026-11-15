@@ -110,7 +110,7 @@ function ExpertDashboardContent() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8 space-y-10">
+    <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-6 sm:py-8 lg:px-8 space-y-6 sm:space-y-10">
       {/* Back to Farmer Wizard Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50/70 p-4">
         <div>
@@ -123,9 +123,9 @@ function ExpertDashboardContent() {
         </div>
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition-colors self-start sm:self-auto shrink-0"
+          className="inline-flex items-center justify-center min-h-[44px] gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition-colors self-start sm:self-auto shrink-0"
         >
-          ← Return to Farmer Wizard
+          ← Back to start
         </Link>
       </div>
 

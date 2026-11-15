@@ -70,6 +70,12 @@ describe("computeCropSeasonWindow & computeBestRainWindow", () => {
     const best = computeBestRainWindow("maize", mockClimate);
     expect(best.hasVerifiedWaterNeed).toBe(false);
     expect(best.strongestSeason.seasonId).toBe("maha");
+
+    const bgRes = computeCropSeasonWindow("black_gram", "maha", mockClimate);
+    expect(bgRes.isUnverifiedWaterNeed).toBe(true);
+    expect(bgRes.cropWaterNeedMm).toBeNull();
+    expect(bgRes.waterCoverageRatio).toBeNull();
+    expect(bgRes.sowingTimingText).toBe("Nov wk1");
   });
 
   it("computes green gram and cowpea coverage accurately", () => {
