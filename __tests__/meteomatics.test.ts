@@ -7,6 +7,7 @@ import {
   clearMeteomaticsCache,
   resetRateLimits,
   sumHoursAtOrAfterNow,
+  sumHoursAtOrAfterNowWithCount,
   getWeeklyUsualRain,
   formatSriLankaTime,
   getMeteomaticsTimeWindow,
@@ -165,9 +166,9 @@ describe("Meteomatics API Route & Utilities", () => {
       ],
     };
 
-    it("generates cache key based on rounded location (2 decimals) and period", () => {
+    it("generates cache key based on rounded location (1 decimal) and period", () => {
       const key = getCacheKey(8.8345, 80.7612, "precip_1h:mm", "2026-11-15T00:00:00Z");
-      expect(key).toBe("8.83_80.76_precip_1h:mm_2026-11-15T00:00:00Z");
+      expect(key).toBe("8.8_80.8_precip_1h:mm_2026-11-15T00:00:00Z");
     });
 
     it("fetches upstream on cache MISS and returns cached response on second call with X-Cache: HIT", async () => {
@@ -187,6 +188,10 @@ describe("Meteomatics API Route & Utilities", () => {
       expect(res1.headers.get("X-Cache")).toBe("MISS");
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
+      // Verify request location sent to upstream Meteomatics is rounded to 1 decimal
+      const upstreamUrl = mockFetch.mock.calls[0][0];
+      expect(upstreamUrl).toContain("/8.8,80.8/json");
+
       // Second call (HIT)
       const res2 = await GET(new NextRequest(url));
       expect(res2.status).toBe(200);
@@ -199,7 +204,7 @@ describe("Meteomatics API Route & Utilities", () => {
   // 4. Utility Functions (Hourly sum, NASA weekly comparison, Sri Lanka Time)
   // -------------------------------------------------------------------------
   describe("Meteomatics Utilities", () => {
-    it("sums only hours at or after 'now'", () => {
+    it("sums only hours at or after 'now' and counts the number of valid hours", () => {
       const now = new Date("2026-11-15T12:00:00Z");
       const dates = [
         { date: "2026-11-15T10:00:00Z", value: 10.0 }, // in the past -> ignored
@@ -209,8 +214,12 @@ describe("Meteomatics API Route & Utilities", () => {
         { date: "2026-11-15T14:00:00Z", value: 1.0 },  // future -> included
       ];
 
+      const res = sumHoursAtOrAfterNowWithCount(dates, now);
+      expect(res.sumMm).toBe(8.0); // 2.5 + 4.5 + 1.0
+      expect(res.hoursCounted).toBe(3);
+
       const sum = sumHoursAtOrAfterNow(dates, now);
-      expect(sum).toBe(8.0); // 2.5 + 4.5 + 1.0
+      expect(sum).toBe(8.0);
     });
 
     it("computes NASA POWER weekly usual average for current month", () => {

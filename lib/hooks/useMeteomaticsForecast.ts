@@ -40,7 +40,7 @@ export function useMeteomaticsForecast(
       return;
     }
 
-    const roundedKey = `${lat.toFixed(2)}_${lon.toFixed(2)}`;
+    const roundedKey = `${lat.toFixed(1)}_${lon.toFixed(1)}`;
     const cached = clientCache.get(roundedKey);
     if (cached && Date.now() - cached.timestamp < CLIENT_CACHE_TTL_MS) {
       setForecast(cached.data);
@@ -53,8 +53,8 @@ export function useMeteomaticsForecast(
 
     async function fetchForecast() {
       try {
-        const roundedLat = Number(lat.toFixed(2));
-        const roundedLon = Number(lon.toFixed(2));
+        const roundedLat = Number(lat.toFixed(1));
+        const roundedLon = Number(lon.toFixed(1));
         const res = await fetch(
           `/api/meteomatics?lat=${roundedLat}&lon=${roundedLon}&parameters=precip_1h:mm`
         );
@@ -71,6 +71,12 @@ export function useMeteomaticsForecast(
 
         const json = await res.json();
         const sumMm = typeof json.sum7dPrecipMm === "number" ? json.sum7dPrecipMm : null;
+
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            `[Meteomatics Dev Client Hook] Location: [${roundedLat}, ${roundedLon}] | Hours counted: ${json.hoursCounted ?? "N/A"} | Summed mm: ${sumMm}`
+          );
+        }
 
         if (sumMm === null) {
           if (!cancelled) {

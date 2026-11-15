@@ -20,8 +20,8 @@ export function getCacheKey(
   parameters: string,
   validDateTime: string
 ): string {
-  const roundedLat = lat.toFixed(2);
-  const roundedLon = lon.toFixed(2);
+  const roundedLat = lat.toFixed(1);
+  const roundedLon = lon.toFixed(1);
   return `${roundedLat}_${roundedLon}_${parameters}_${validDateTime}`;
 }
 
@@ -122,13 +122,16 @@ export function getMeteomaticsTimeWindow(now = new Date()): {
 
 /**
  * Sums hourly precipitation for only those hours at or after `now`.
+ * In dev mode only, logs the number of hours counted and the summed mm.
+ * Never logs credentials.
  */
-export function sumHoursAtOrAfterNow(
+export function sumHoursAtOrAfterNowWithCount(
   dates: MeteomaticsDateValue[],
   now = new Date()
-): number {
+): { sumMm: number; hoursCounted: number } {
   const nowMs = now.getTime();
   let sum = 0;
+  let hoursCounted = 0;
   for (const entry of dates) {
     if (!entry.date || entry.value === null || isNaN(entry.value)) {
       continue;
@@ -136,9 +139,23 @@ export function sumHoursAtOrAfterNow(
     const entryMs = new Date(entry.date).getTime();
     if (entryMs >= nowMs) {
       sum += Math.max(0, entry.value);
+      hoursCounted++;
     }
   }
-  return Number(sum.toFixed(1));
+  const sumMm = Number(sum.toFixed(1));
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      `[Meteomatics Dev Sanity Check] Hours counted: ${hoursCounted} | Summed mm: ${sumMm}`
+    );
+  }
+  return { sumMm, hoursCounted };
+}
+
+export function sumHoursAtOrAfterNow(
+  dates: MeteomaticsDateValue[],
+  now = new Date()
+): number {
+  return sumHoursAtOrAfterNowWithCount(dates, now).sumMm;
 }
 
 /**

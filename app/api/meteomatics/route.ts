@@ -7,7 +7,7 @@ import {
   meteomaticsServerCache,
   checkMeteomaticsRateLimit,
   getMeteomaticsTimeWindow,
-  sumHoursAtOrAfterNow,
+  sumHoursAtOrAfterNowWithCount,
   MeteomaticsRawResponse,
 } from "@/lib/utils/meteomatics";
 
@@ -131,7 +131,8 @@ export async function GET(request: NextRequest) {
   }
 
   // Build Request: https://api.meteomatics.com/validdatetime/parameters/locations/format
-  const locationStr = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+  // Location rounded to 1 decimal place (~11 km grid resolution)
+  const locationStr = `${lat.toFixed(1)},${lon.toFixed(1)}`;
   const meteomaticsUrl = `https://api.meteomatics.com/${validDateTime}/${validatedParamsStr}/${locationStr}/json`;
 
   const authHeader = "Basic " + Buffer.from(`${username}:${password}`).toString("base64");
@@ -167,18 +168,32 @@ export async function GET(request: NextRequest) {
 
     // Compute supplementary 7-day hourly sum if precip_1h:mm is present
     let sum7dPrecipMm: number | null = null;
+    let hoursCounted = 0;
     const precipData = json.data?.find((d) => d.parameter === "precip_1h:mm");
     if (precipData && precipData.coordinates?.[0]?.dates) {
-      sum7dPrecipMm = sumHoursAtOrAfterNow(precipData.coordinates[0].dates);
+      const calc = sumHoursAtOrAfterNowWithCount(precipData.coordinates[0].dates);
+      sum7dPrecipMm = calc.sumMm;
+      hoursCounted = calc.hoursCounted;
+
+      // In dev mode only: log hours counted and summed mm for sanity-check against direct query
+      if (process.env.NODE_ENV !== "production") {
+        console.log(
+          `[Meteomatics Dev Sanity Check] Location: [${lat.toFixed(1)}, ${lon.toFixed(1)}] | Hours counted: ${hoursCounted} | Summed mm: ${sum7dPrecipMm}`
+        );
+      }
     }
 
     const payload = {
       status: "OK",
       source: "Meteomatics API",
       attribution: "Meteomatics Weather API (supplementary model forecast)",
-      location: { lat, lon },
+      location: {
+        lat: Number(lat.toFixed(1)),
+        lon: Number(lon.toFixed(1)),
+      },
       validDateTime,
       parameters: validatedParamsStr,
+      hoursCounted,
       sum7dPrecipMm,
       raw: json,
     };
