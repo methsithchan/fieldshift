@@ -39,6 +39,9 @@ export default function RootLayout({
             Program.
           </p>
           <p className="mt-1">
+            Built for NASA Space Apps Challenge 2026 by Methsith Chandrasena and Team.
+          </p>
+          <p className="mt-1">
             This tool supports — and does not replace — farmers and local
             agricultural experts.
           </p>

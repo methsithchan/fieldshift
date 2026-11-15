@@ -35,7 +35,7 @@ export default function ModelAssumptionsPanel() {
               <tr key={item.id} className="hover:bg-gray-50/50">
                 <td className="py-2.5 px-3 font-medium text-gray-900">{item.name}</td>
                 <td className="py-2.5 px-3 uppercase text-[10px] font-mono text-gray-500">
-                  {item.category}
+                  {item.category === "input_completeness" ? "input completeness" : item.category}
                 </td>
                 <td className="py-2.5 px-3 font-mono font-semibold text-gray-800">
                   {item.value} {item.unit}

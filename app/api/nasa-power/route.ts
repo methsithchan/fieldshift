@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { NasaPowerRawResponse } from "@/lib/types/nasa";
 import { processNasaClimateData } from "@/lib/utils/climate";
 
+export const maxDuration = 60;
+
 // In-memory cache for NASA POWER responses
 // Key: `${lat.toFixed(4)}_${lon.toFixed(4)}_${start}_${end}`
 const cache = new Map<string, { data: unknown; timestamp: number }>();

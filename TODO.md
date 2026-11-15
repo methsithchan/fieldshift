@@ -14,7 +14,7 @@ Last updated: Phase 4 (Pre-Phase 5 Audit & Heuristics Polish)
 - [ ] **Unmeasured crop water values**: Maize and Black Gram water requirements in mm are unverified in reviewed Sri Lanka Dry Zone publications and are strictly preserved as `null` in `data/crops.ts`. Engine marks water coverage as "not assessed" and surfaces explicit data gaps.
 - [ ] **Rice water basis vs. Legume basis**: Rice water values (948–1,232 mm; DOA/RRDI Mahailluppallama) measure *total requirement* (including land preparation and percolation), whereas Green Gram (228/270 mm; Annals SL DOA 2014) and Cowpea (175–288 mm; Liyanage 1992) measure *crop water use* only. The engine compares each crop solely to its own requirement and never across bases.
 - [x] **Coastal cell distortion**: Documented in UI and README. Coastal points mix land and marine models in NASA POWER; presets use inland stations (e.g., Mahailluppallama, Medawachchiya, Polonnaruwa).
-- [ ] **License**: No license chosen yet.
+- [x] **License**: MIT License added.
 
 ## 🟡 Model Assumptions (Not Validated by an Agronomist)
 

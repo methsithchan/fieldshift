@@ -85,23 +85,30 @@ Or connect the GitHub repository to Vercel for automatic deploys on push.
 
 ```
 ├── app/                    # Next.js App Router pages & API routes
-│   ├── api/nasa-power/     # POWER proxy route handler
-│   ├── layout.tsx          # Root layout with footer credit
+│   ├── api/nasa-power/     # POWER proxy route handler (maxDuration = 60s)
+│   ├── layout.tsx          # Root layout with footer & team credits
 │   └── page.tsx            # Main application page
-├── components/             # React components
-│   └── Charts/             # Recharts chart components
+├── components/             # React components (Map, SoilForm, ResultsCards, Charts, Sliders)
+│   └── Charts/             # Recharts visualization components
 ├── lib/
-│   ├── types/              # TypeScript type definitions
-│   ├── hooks/              # React hooks (useNasaData, etc.)
-│   ├── engine/             # Rotation scoring engine (pure functions)
-│   └── utils/              # Data processing utilities
+│   ├── types/              # TypeScript type definitions (engine, crops, NASA)
+│   ├── hooks/              # React hooks (useNasaData)
+│   ├── engine/             # Rotation scoring engine & transparent heuristics
+│   └── utils/              # Data processing & climatology utilities
 ├── data/
-│   └── crops.ts            # Crop characteristic data (mostly unverified)
-├── __tests__/              # Unit tests
+│   ├── crops.ts            # Crop characteristic data (sourced, not agronomist-validated)
+│   └── seasons.ts          # Cultivation calendar definitions (FAO report cc3682en)
+├── scripts/                # Live evaluation & climatology verification scripts
+├── __tests__/              # Unit tests (Vitest)
 ├── TODO.md                 # Unverified / placeholder items tracker
+├── LICENSE                 # MIT License
 └── README.md
 ```
 
+## Team & Credits
+
+- **Methsith Chandrasena and Team** — Developed for the NASA Space Apps Challenge 2026.
+
 ## License
 
-TBD — hackathon submission.
+[MIT License](LICENSE) — see the LICENSE file for details.

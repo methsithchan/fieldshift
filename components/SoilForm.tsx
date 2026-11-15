@@ -37,11 +37,82 @@ const CONFIDENCE_BADGES: Record<
   },
 };
 
+/**
+ * Pure function computing atomic updates for SoilForm.
+ * Guaranteed single update per event: clearing pH or selecting 'unknown' in any
+ * dropdown or source button resets BOTH the value and its source to unknown in one call.
+ */
+export function getSoilFormUpdate(
+  field: "ph" | "texture" | "organicCarbon" | "drainage",
+  kind: "value" | "source",
+  val: string | number | null
+): Partial<SoilFormState> {
+  if (field === "ph") {
+    if (kind === "value") {
+      if (val === null || val === "" || Number.isNaN(val)) {
+        return { ph: null, phConfidence: "unknown" };
+      }
+      return { ph: Number(val) };
+    }
+    // kind === "source"
+    if (val === "unknown") {
+      return { ph: null, phConfidence: "unknown" };
+    }
+    return { phConfidence: val as DataConfidenceLabel };
+  }
+
+  if (field === "texture") {
+    if (kind === "value") {
+      if (val === "unknown") {
+        return { texture: "unknown", textureConfidence: "unknown" };
+      }
+      return { texture: val as SoilTextureType };
+    }
+    if (val === "unknown") {
+      return { texture: "unknown", textureConfidence: "unknown" };
+    }
+    return { textureConfidence: val as DataConfidenceLabel };
+  }
+
+  if (field === "organicCarbon") {
+    if (kind === "value") {
+      if (val === "unknown") {
+        return { organicCarbon: "unknown", organicCarbonConfidence: "unknown" };
+      }
+      return { organicCarbon: val as SoilOrganicCarbonType };
+    }
+    if (val === "unknown") {
+      return { organicCarbon: "unknown", organicCarbonConfidence: "unknown" };
+    }
+    return { organicCarbonConfidence: val as DataConfidenceLabel };
+  }
+
+  if (field === "drainage") {
+    if (kind === "value") {
+      if (val === "unknown") {
+        return { drainage: "unknown", drainageConfidence: "unknown" };
+      }
+      return { drainage: val as SoilDrainageType };
+    }
+    if (val === "unknown") {
+      return { drainage: "unknown", drainageConfidence: "unknown" };
+    }
+    return { drainageConfidence: val as DataConfidenceLabel };
+  }
+
+  return {};
+}
+
 export default function SoilForm({ value, onChange }: SoilFormProps) {
-  const updateField = <K extends keyof SoilFormState>(key: K, val: SoilFormState[K]) => {
+  const handleUpdate = (
+    field: "ph" | "texture" | "organicCarbon" | "drainage",
+    kind: "value" | "source",
+    val: string | number | null
+  ) => {
+    const patch = getSoilFormUpdate(field, kind, val);
     onChange({
       ...value,
-      [key]: val,
+      ...patch,
     });
   };
 
@@ -91,10 +162,7 @@ export default function SoilForm({ value, onChange }: SoilFormProps) {
               value={value.ph !== null ? value.ph : ""}
               onChange={(e) => {
                 const val = e.target.value ? parseFloat(e.target.value) : null;
-                updateField("ph", val);
-                if (val === null) {
-                  updateField("phConfidence", "unknown");
-                }
+                handleUpdate("ph", "value", val);
               }}
               className="w-full rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-900 shadow-xs focus:border-blue-500 focus:outline-hidden"
             />
@@ -110,10 +178,7 @@ export default function SoilForm({ value, onChange }: SoilFormProps) {
               <button
                 key={conf}
                 type="button"
-                onClick={() => {
-                  updateField("phConfidence", conf);
-                  if (conf === "unknown") updateField("ph", null);
-                }}
+                onClick={() => handleUpdate("ph", "source", conf)}
                 className={`rounded px-2 py-0.5 capitalize transition-colors ${
                   value.phConfidence === conf
                     ? "bg-blue-600 font-medium text-white"
@@ -149,13 +214,7 @@ export default function SoilForm({ value, onChange }: SoilFormProps) {
 
           <select
             value={value.texture}
-            onChange={(e) => {
-              const val = e.target.value as SoilTextureType;
-              updateField("texture", val);
-              if (val === "unknown") {
-                updateField("textureConfidence", "unknown");
-              }
-            }}
+            onChange={(e) => handleUpdate("texture", "value", e.target.value)}
             className="w-full rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-900 shadow-xs focus:border-blue-500 focus:outline-hidden"
           >
             <option value="unknown">Unknown / Not reported</option>
@@ -175,10 +234,7 @@ export default function SoilForm({ value, onChange }: SoilFormProps) {
               <button
                 key={conf}
                 type="button"
-                onClick={() => {
-                  updateField("textureConfidence", conf);
-                  if (conf === "unknown") updateField("texture", "unknown");
-                }}
+                onClick={() => handleUpdate("texture", "source", conf)}
                 className={`rounded px-2 py-0.5 capitalize transition-colors ${
                   value.textureConfidence === conf
                     ? "bg-blue-600 font-medium text-white"
@@ -214,13 +270,7 @@ export default function SoilForm({ value, onChange }: SoilFormProps) {
 
           <select
             value={value.organicCarbon}
-            onChange={(e) => {
-              const val = e.target.value as SoilOrganicCarbonType;
-              updateField("organicCarbon", val);
-              if (val === "unknown") {
-                updateField("organicCarbonConfidence", "unknown");
-              }
-            }}
+            onChange={(e) => handleUpdate("organicCarbon", "value", e.target.value)}
             className="w-full rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-900 shadow-xs focus:border-blue-500 focus:outline-hidden"
           >
             <option value="unknown">Unknown / Not tested</option>
@@ -239,10 +289,7 @@ export default function SoilForm({ value, onChange }: SoilFormProps) {
               <button
                 key={conf}
                 type="button"
-                onClick={() => {
-                  updateField("organicCarbonConfidence", conf);
-                  if (conf === "unknown") updateField("organicCarbon", "unknown");
-                }}
+                onClick={() => handleUpdate("organicCarbon", "source", conf)}
                 className={`rounded px-2 py-0.5 capitalize transition-colors ${
                   value.organicCarbonConfidence === conf
                     ? "bg-blue-600 font-medium text-white"
@@ -280,13 +327,7 @@ export default function SoilForm({ value, onChange }: SoilFormProps) {
 
           <select
             value={value.drainage}
-            onChange={(e) => {
-              const val = e.target.value as SoilDrainageType;
-              updateField("drainage", val);
-              if (val === "unknown") {
-                updateField("drainageConfidence", "unknown");
-              }
-            }}
+            onChange={(e) => handleUpdate("drainage", "value", e.target.value)}
             className="w-full rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-900 shadow-xs focus:border-blue-500 focus:outline-hidden"
           >
             <option value="unknown">Unknown / Not reported</option>
@@ -306,10 +347,7 @@ export default function SoilForm({ value, onChange }: SoilFormProps) {
               <button
                 key={conf}
                 type="button"
-                onClick={() => {
-                  updateField("drainageConfidence", conf);
-                  if (conf === "unknown") updateField("drainage", "unknown");
-                }}
+                onClick={() => handleUpdate("drainage", "source", conf)}
                 className={`rounded px-2 py-0.5 capitalize transition-colors ${
                   value.drainageConfidence === conf
                     ? "bg-blue-600 font-medium text-white"

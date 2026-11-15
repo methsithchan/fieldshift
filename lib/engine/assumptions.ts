@@ -8,7 +8,7 @@
 export interface ModelAssumption {
   id: string;
   name: string;
-  category: "rainfall" | "soil" | "confidence" | "economic";
+  category: "rainfall" | "soil" | "input_completeness" | "economic";
   value: number;
   unit: string;
   description: string;
@@ -95,56 +95,56 @@ export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
   },
   CONFIDENCE_DEDUCTION_UNKNOWN_PH: {
     id: "CONFIDENCE_DEDUCTION_UNKNOWN_PH",
-    name: "Unknown pH Confidence Deduction",
-    category: "confidence",
+    name: "Unknown pH Completeness Deduction",
+    category: "input_completeness",
     value: 8,
     unit: "% deduction",
-    description: "Deduction from 100% confidence score when soil pH is unknown.",
+    description: "Deduction from 100% input completeness score when soil pH is unknown.",
     validationStatus: "unvalidated - heuristic rule",
   },
   CONFIDENCE_DEDUCTION_UNKNOWN_TEXTURE: {
     id: "CONFIDENCE_DEDUCTION_UNKNOWN_TEXTURE",
-    name: "Unknown Texture Confidence Deduction",
-    category: "confidence",
+    name: "Unknown Texture Completeness Deduction",
+    category: "input_completeness",
     value: 10,
     unit: "% deduction",
-    description: "Deduction from confidence score when soil texture is unknown.",
+    description: "Deduction from input completeness score when soil texture is unknown.",
     validationStatus: "unvalidated - heuristic rule",
   },
   CONFIDENCE_DEDUCTION_UNKNOWN_DRAINAGE: {
     id: "CONFIDENCE_DEDUCTION_UNKNOWN_DRAINAGE",
-    name: "Unknown Drainage Confidence Deduction",
-    category: "confidence",
+    name: "Unknown Drainage Completeness Deduction",
+    category: "input_completeness",
     value: 12,
     unit: "% deduction",
-    description: "Deduction from confidence score when soil drainage is unknown.",
+    description: "Deduction from input completeness score when soil drainage is unknown.",
     validationStatus: "unvalidated - heuristic rule",
   },
   CONFIDENCE_DEDUCTION_UNKNOWN_SOC: {
     id: "CONFIDENCE_DEDUCTION_UNKNOWN_SOC",
-    name: "Unknown SOC Confidence Deduction",
-    category: "confidence",
+    name: "Unknown SOC Completeness Deduction",
+    category: "input_completeness",
     value: 8,
     unit: "% deduction",
-    description: "Deduction from confidence score when organic carbon is unknown.",
+    description: "Deduction from input completeness score when organic carbon is unknown.",
     validationStatus: "unvalidated - heuristic rule",
   },
   CONFIDENCE_DEDUCTION_NULL_WATER_NEED: {
     id: "CONFIDENCE_DEDUCTION_NULL_WATER_NEED",
-    name: "Unmeasured Crop Water Need Deduction",
-    category: "confidence",
+    name: "Unmeasured Crop Water Need Completeness Deduction",
+    category: "input_completeness",
     value: 15,
     unit: "% deduction",
-    description: "Deduction per crop whose water requirement is null/unverified (Maize, Black Gram).",
+    description: "Deduction from input completeness score per crop whose water requirement is null/unverified (Maize, Black Gram).",
     validationStatus: "unvalidated - heuristic rule",
   },
   CONFIDENCE_DEDUCTION_NULL_CLIMATE: {
     id: "CONFIDENCE_DEDUCTION_NULL_CLIMATE",
-    name: "Missing Climate Data Deduction",
-    category: "confidence",
+    name: "Missing Climate Data Completeness Deduction",
+    category: "input_completeness",
     value: 35,
     unit: "% deduction",
-    description: "Deduction when NASA POWER climate data has not loaded.",
+    description: "Deduction from input completeness score when NASA POWER climate data has not loaded.",
     validationStatus: "unvalidated - heuristic rule",
   },
 };
