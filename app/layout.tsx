@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Field Shift — Crop Rotation Decision Support",
+  title: "EarthWise — Crop Rotation Decision Support",
   description:
     "Explore crop-rotation strategies using NASA Earth observations and local soil data. Built for NASA Space Apps 2026.",
 };

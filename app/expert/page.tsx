@@ -134,7 +134,7 @@ function ExpertDashboardContent() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              🌾 Field Shift — Expert Details View
+              🌾 EarthWise — Expert Details View
             </h1>
             <p className="mt-1 text-sm text-gray-600">
               NASA Earth Observations for Crop Rotation Decision Support &amp; Soil Health
@@ -396,7 +396,7 @@ function ExpertDashboardContent() {
               Decision Support Notice — Farmers &amp; Local Expert Authority
             </h4>
             <p className="text-xs leading-relaxed text-amber-800">
-              Field Shift provides regional climate context derived from NASA POWER satellite and assimilation datasets (native resolution ~0.5° × 0.5°, roughly 55 km). It does <strong>not</strong> substitute for field-level soil testing, local agricultural extension officer guidance, or farmer experiential judgment. Always consult local agrarian service centers and Department of Agriculture guidelines.
+              EarthWise provides regional climate context derived from NASA POWER satellite and assimilation datasets (native resolution ~0.5° × 0.5°, roughly 55 km). It does <strong>not</strong> substitute for field-level soil testing, local agricultural extension officer guidance, or farmer experiential judgment. Always consult local agrarian service centers and Department of Agriculture guidelines.
             </p>
           </div>
         </div>

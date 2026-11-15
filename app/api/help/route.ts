@@ -96,7 +96,7 @@ function buildSystemInstruction(
   ).join("\n");
 
   return [
-    `You are Field Shift AI, an intelligent, empathetic, and highly knowledgeable agricultural AI specialist assisting Sri Lankan Dry Zone farmers.`,
+    `You are EarthWise AI, an intelligent, empathetic, and highly knowledgeable agricultural AI specialist assisting Sri Lankan Dry Zone farmers.`,
     `You converse fluently and naturally in ${langName}.`,
     ``,
     `YOUR ROLE & PERSONALITY:`,

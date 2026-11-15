@@ -176,7 +176,7 @@ export interface TranslationStrings {
 
 export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
   en: {
-    appTitle: "Field Shift",
+    appTitle: "EarthWise",
     appSubtitle: "Farmer Crop Rotation Guide",
     stepIndicator: (current, total) => `Step ${current} of ${total}`,
     back: "Back",
@@ -202,7 +202,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
 
     locStepTitle: "Where is your farm?",
     locStepSubtitle: "We use 11 years of NASA satellite rainfall data for your area.",
-    useMyLocation: "📍 Use My Location",
+    useMyLocation: "Use My Location",
     locating: "Detecting location...",
     noStoreNotice: "Used only to look up rain data for your area.",
     orSelectPreset: "Or choose an agricultural area:",
@@ -256,10 +256,10 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoRoleResearcherDesc: "Expert climate data, charts & soil models",
     journoLocTitle: "Where is your farm?",
     journoLocSubtitle: "We use 11 years of NASA satellite rainfall data for your area",
-    journoUseMyLocation: "📍 Use my location",
+    journoUseMyLocation: "Use my location",
     journoLocating: "Finding your location...",
     journoOrSelectArea: "Or choose an area preset:",
-    journoNotStoredNote: "🔒 Used only to look up rain data for your area.",
+    journoNotStoredNote: "Used only to look up rain data for your area.",
     journoCropTitle: "Select your crop",
     journoCropSubtitle: "Pick one of the 5 verified Dry Zone crops",
     journoCropSelectPlaceholder: "Choose a crop...",
@@ -375,7 +375,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
   },
 
   si: {
-    appTitle: "ෆීල්ඩ් ෂිෆ්ට් (Field Shift)",
+    appTitle: "EarthWise (අර්ත්වයිස්)",
     appSubtitle: "ගොවි බෝග මාරු මාර්ගෝපදේශය",
     stepIndicator: (current, total) => `පියවර ${current} / ${total}`,
     back: "ආපසු",
@@ -401,7 +401,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
 
     locStepTitle: "ඔබේ ගොවිපොළ පිහිටියේ කොහේද?",
     locStepSubtitle: "ඔබේ ප්‍රදේශය සඳහා වසර 11 ක නාසා (NASA) චන්ද්‍රිකා වැසි දත්ත භාවිත කෙරේ.",
-    useMyLocation: "📍 මගේ වත්මන් ස්ථානය ගන්න",
+    useMyLocation: "මගේ වත්මන් ස්ථානය ගන්න",
     locating: "ස්ථානය සොයමින් පවතී...",
     noStoreNotice: "ඔබේ ප්‍රදේශයේ වැසි දත්ත ලබාගැනීමට පමණක් භාවිත කෙරේ.",
     orSelectPreset: "නැතහොත් කෘෂිකාර්මික ප්‍රදේශයක් තෝරන්න:",
@@ -455,10 +455,10 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoRoleResearcherDesc: "විශේෂඥ දේශගුණ දත්ත, ප්‍රස්ථාර සහ පාංශු ආකෘති",
     journoLocTitle: "ඔබේ ගොවිපොළ කොහේද?",
     journoLocSubtitle: "ඔබේ ප්‍රදේශය සඳහා වසර 11 ක නාසා වැසි දත්ත භාවිත කෙරේ",
-    journoUseMyLocation: "📍 මගේ වත්මන් ස්ථානය",
+    journoUseMyLocation: "මගේ වත්මන් ස්ථානය",
     journoLocating: "ස්ථානය සොයමින් පවතී...",
     journoOrSelectArea: "නැතහොත් කෘෂිකාර්මික ප්‍රදේශයක් තෝරන්න:",
-    journoNotStoredNote: "🔒 ඔබේ ප්‍රදේශයේ වැසි දත්ත ලබාගැනීමට පමණක් භාවිත කෙරේ.",
+    journoNotStoredNote: "ඔබේ ප්‍රදේශයේ වැසි දත්ත ලබාගැනීමට පමණක් භාවිත කෙරේ.",
     journoCropTitle: "ඔබේ බෝගය තෝරන්න",
     journoCropSubtitle: "වියළි කලාපීය ප්‍රධාන බෝග 5 න් එකක් තෝරන්න",
     journoCropSelectPlaceholder: "බෝගයක් තෝරන්න...",
@@ -574,7 +574,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
   },
 
   ta: {
-    appTitle: "ஃபீல்ட் ஷிப்ட் (Field Shift)",
+    appTitle: "EarthWise (எர்த்வைஸ்)",
     appSubtitle: "விவசாய பயிர் சுழற்சி வழிகாட்டி",
     stepIndicator: (current, total) => `படி ${current} / ${total}`,
     back: "பின்செல்",
@@ -600,7 +600,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
 
     locStepTitle: "உங்கள் பண்ணை எங்குள்ளது?",
     locStepSubtitle: "உங்கள் பகுதிக்கான நாசாவின் 11 ஆண்டுகால மழைவீழ்ச்சி தரவு பயன்படுத்தப்படுகிறது.",
-    useMyLocation: "📍 எனது அமைவிடத்தைப் பயன்படுத்தவும்",
+    useMyLocation: "எனது அமைவிடத்தைப் பயன்படுத்தவும்",
     locating: "அமைவிடம் அறியப்படுகிறது...",
     noStoreNotice: "உங்கள் பகுதிக்கான மழைத் தரவைப் பார்க்க மட்டுமே பயன்படுகிறது.",
     orSelectPreset: "அல்லது விவசாயப் பகுதியைத் தேர்ந்தெடுக்கவும்:",
@@ -654,10 +654,10 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoRoleResearcherDesc: "நிபுணர் வானிலை தரவு, விளக்கப்படங்கள் மற்றும் மண் மாதிரிகள்",
     journoLocTitle: "உங்கள் பண்ணை எங்குள்ளது?",
     journoLocSubtitle: "உங்கள் பகுதிக்கான 11 ஆண்டுகால நாசா மழைத் தரவைப் பயன்படுத்துகிறோம்",
-    journoUseMyLocation: "📍 எனது இருப்பிடம்",
+    journoUseMyLocation: "எனது இருப்பிடம்",
     journoLocating: "இருப்பிடம் கண்டறியப்படுகிறது...",
     journoOrSelectArea: "அல்லது ஒரு விவசாயப் பகுதியைத் தேர்வுசெய்யவும்:",
-    journoNotStoredNote: "🔒 உங்கள் பகுதிக்கான மழைத் தரவைப் பார்க்க மட்டுமே பயன்படுகிறது.",
+    journoNotStoredNote: "உங்கள் பகுதிக்கான மழைத் தரவைப் பார்க்க மட்டுமே பயன்படுகிறது.",
     journoCropTitle: "பயிரைத் தேர்ந்தெடுக்கவும்",
     journoCropSubtitle: "சரிபார்க்கப்பட்ட 5 உலர் வலயப் பயிர்களில் ஒன்றைத் தேர்வுசெய்க",
     journoCropSelectPlaceholder: "ஒரு பயிரைத் தேர்ந்தெடுக்கவும்...",
