@@ -1,4 +1,4 @@
-# 🌾 Field Shift
+# 🌾 EarthWise
 
 **A farmer-friendly crop-rotation decision-support tool built on NASA Earth observations.**
 
