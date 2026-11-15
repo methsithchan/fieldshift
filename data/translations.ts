@@ -166,6 +166,8 @@ export interface TranslationStrings {
   journoTopMatchBadge: string;
   journoOtherCropsRankedTitle: string;
   journoRankLabel: (rank: number) => string;
+  whyItFitsLabel: string;
+  rainCoveredLabel: (pct: number) => string;
   cropVerdicts: Record<string, { maha: string; yala: string }>;
 
   // Localized crop names
@@ -338,6 +340,8 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoTopMatchBadge: "⭐️ TOP MATCH",
     journoOtherCropsRankedTitle: "Other crops you selected (Ranked)",
     journoRankLabel: (rank: number) => `Rank #${rank}`,
+    whyItFitsLabel: "✓ Why it fits:",
+    rainCoveredLabel: (pct: number) => `${pct}% rain-covered`,
     cropVerdicts: {
       rice: {
         maha: "Best match for wet lowlands: Maha rains meet ~74% of water need and rice tolerates seasonal waterlogging.",
@@ -535,6 +539,8 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoTopMatchBadge: "⭐️ ඉහළම ගැළපීම",
     journoOtherCropsRankedTitle: "ඔබ තෝරාගත් අනෙකුත් බෝග (ශ්‍රේණිගතව)",
     journoRankLabel: (rank: number) => `ශ්‍රේණිය #${rank}`,
+    whyItFitsLabel: "✓ ගැලපෙන්නේ ඇයි:",
+    rainCoveredLabel: (pct: number) => `වැස්සෙන් ${pct}% ක් ආවරණය වේ`,
     cropVerdicts: {
       rice: {
         maha: "පහත් බිම් සඳහා වඩාත්ම සුදුසුයි: මහ වැස්සෙන් ජල අවශ්‍යතාවයෙන් 74% ක් ආවරණය වන අතර ජලය රැඳීමට ඔරොත්තු දෙයි.",
@@ -732,6 +738,8 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoTopMatchBadge: "⭐️ சிறந்த பொருத்தம்",
     journoOtherCropsRankedTitle: "நீங்கள் தெரிவுசெய்த மற்ற பயிர்கள் (வரிசைப்படுத்தப்பட்டது)",
     journoRankLabel: (rank: number) => `வரிசை #${rank}`,
+    whyItFitsLabel: "✓ ஏன் பொருந்துகிறது:",
+    rainCoveredLabel: (pct: number) => `மழையினால் ${pct}% பூர்த்தி`,
     cropVerdicts: {
       rice: {
         maha: "பள்ளத்தாக்கு நிலங்களுக்கு மிகவும் சிறந்தது: பெரும்போக மழை 74% நீர் தேவையைப் பூர்த்தி செய்கிறது மற்றும் நீர் தேங்குவதைத் தாங்கும்.",

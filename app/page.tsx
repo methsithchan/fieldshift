@@ -358,7 +358,6 @@ Meteomatics 7-day model forecast: ${meteoForecast ? `${meteoForecast.next7DaysMm
                 onClick={() => setStep((s) => s - 1)}
                 className="text-xs font-semibold text-neutral-500 hover:text-neutral-900 flex items-center gap-1 min-h-[44px] cursor-pointer"
               >
-                <span>←</span>
                 <span>{t.journoBackBtn}</span>
               </button>
             ) : (
@@ -808,7 +807,7 @@ Meteomatics 7-day model forecast: ${meteoForecast ? `${meteoForecast.next7DaysMm
                       {/* Concise Verdict on why it is the top match */}
                       <div className="rounded-xl bg-neutral-800/80 p-3 text-xs text-neutral-200 leading-relaxed border border-neutral-700/60">
                         <span className="font-bold text-lime-400 block mb-0.5">
-                          ✓ Why it fits:
+                          {t.whyItFitsLabel}
                         </span>
                         <span>{topMatch.verdict}</span>
                       </div>
@@ -862,7 +861,7 @@ Meteomatics 7-day model forecast: ${meteoForecast ? `${meteoForecast.next7DaysMm
                                 <div className="text-right shrink-0">
                                   {coveragePct !== null ? (
                                     <span className="font-black text-neutral-900 text-xs">
-                                      {coveragePct}% rain-covered
+                                      {t.rainCoveredLabel(coveragePct)}
                                     </span>
                                   ) : (
                                     <span className="rounded-full bg-amber-500/15 text-amber-800 text-[10px] font-bold px-2 py-0.5">
