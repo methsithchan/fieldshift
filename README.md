@@ -61,12 +61,12 @@ cp .env.example .env.local
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `GEMINI_API_KEY` | Yes (for AI help) | Google AI Studio API key. Get one free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Server-side only; never sent to the client. |
-| `GEMINI_MODEL` | No | Override the default model (`gemini-2.5-flash`). |
+| `GEMINI_MODEL` | No | Override the default model (`gemini-3.5-flash-lite`). |
 
 > **API details (sourced from [ai.google.dev](https://ai.google.dev/gemini-api/docs/text-generation), Nov 2026):**
 > - Endpoint: `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
 > - Key is sent via the `x-goog-api-key` HTTP header (not in the URL).
-> - Default model: `gemini-2.5-flash` (current free-tier flash model).
+> - Default model: `gemini-3.5-flash-lite` (current free-tier flash model).
 > - Free tier limits: 15 RPM, 1M TPM, 1,500 RPD.
 > - If `GEMINI_API_KEY` is absent, invalid, or the API errors, the Help Sheet falls back to static pre-written guidance in the farmer's language and shows "Help is unavailable right now".
 

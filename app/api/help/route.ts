@@ -25,12 +25,12 @@ function checkRateLimit(ip: string): boolean {
 // ---------------------------------------------------------------------------
 // Gemini REST API configuration
 // ---------------------------------------------------------------------------
-// Model & endpoint sourced from Google AI Studio docs (Nov 2026):
-//   https://ai.google.dev/gemini-api/docs/text-generation#generate-text-from-text
-// Key is sent via x-goog-api-key header (never in URL query params).
-// Default model: gemini-2.5-flash — current free-tier flash model.
-// Override via GEMINI_MODEL env var if Google retires this alias.
-const GEMINI_MODEL_DEFAULT = "gemini-2.5-flash";
+// Model & endpoint sourced from Google AI Studio docs & API response:
+//   Endpoint: https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
+//   Key is sent via x-goog-api-key header (never in URL query params).
+//   Default model: gemini-3.5-flash-lite — fast, lightweight free-tier model.
+//   Override via GEMINI_MODEL env var if needed.
+const GEMINI_MODEL_DEFAULT = "gemini-3.5-flash-lite";
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 const GEMINI_TIMEOUT_MS = 10_000;
 
