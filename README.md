@@ -62,6 +62,15 @@ cp .env.example .env.local
 |----------|----------|-------------|
 | `GEMINI_API_KEY` | Yes (for AI help) | Google AI Studio API key. Get one free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Server-side only; never sent to the client. |
 | `GEMINI_MODEL` | No | Override the default model (`gemini-3.5-flash-lite`). |
+| `METEOMATICS_USER` | No (supplementary) | Meteomatics Weather API username. Used server-side only for optional 7-day model precipitation forecast line. |
+| `METEOMATICS_PASS` | No (supplementary) | Meteomatics Weather API password. HTTP Basic auth, server-side only; never client-side, never in URLs, never logged or committed. If unset or if API fails, the forecast line is hidden gracefully. |
+
+> **Meteomatics Weather API Details:**
+> - NASA POWER stays the core of every analysis; Meteomatics is strictly a supplementary weather model forecast.
+> - URL format: `https://api.meteomatics.com/<validdatetime>/<parameters>/<locations>/json`
+> - Allowed parameters: `t_2m:C`, `precip_1h:mm`
+> - Server-side only via `/api/meteomatics`: 10-second timeout, in-memory cache keyed by rounded location + period (3-hour TTL), sliding-window rate limit, and sanitization (credentials are never logged or exposed).
+> - If credentials are missing or the API returns an error, the farmer UI silently hides the forecast line without impacting core functionality.
 
 > **API details (sourced from [ai.google.dev](https://ai.google.dev/gemini-api/docs/text-generation), Nov 2026):**
 > - Endpoint: `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`

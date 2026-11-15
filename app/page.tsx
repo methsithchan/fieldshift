@@ -7,6 +7,7 @@ import { LanguageCode, TRANSLATIONS } from "@/data/translations";
 import { CROPS } from "@/data/crops";
 import { useNasaData } from "@/lib/hooks/useNasaData";
 import { computeBestRainWindow } from "@/lib/engine/crop-window";
+import { useMeteomaticsForecast } from "@/lib/hooks/useMeteomaticsForecast";
 import HelpSheet from "@/components/Wizard/HelpSheet";
 
 // Default coordinates: Padaviya (~8.83°N, 80.76°E)
@@ -45,6 +46,9 @@ export default function Home() {
   // Step 4: Chosen Crop (one of the 5 verified crops)
   const [selectedCrop, setSelectedCrop] = useState<typeof CROP_IDS[number]>("rice");
 
+  // Step 5: See More panel toggle
+  const [showSeeMore, setShowSeeMore] = useState<boolean>(false);
+
   // Help Sheet state
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
 
@@ -53,6 +57,14 @@ export default function Home() {
 
   // NASA Data hook
   const { data: climateData, loading: climateLoading, error: climateError } = useNasaData(lat, lon);
+
+  // Supplementary Meteomatics Forecast hook (active on Step 5, hides if API fails/no data)
+  const { forecast: meteoForecast } = useMeteomaticsForecast(
+    lat,
+    lon,
+    climateData,
+    step === 5
+  );
 
   // Compute best rain-supported window
   const windowAnalysis = useMemo(
@@ -603,15 +615,95 @@ export default function Home() {
 
               {/* Action Buttons */}
               <div className="space-y-2">
-                {/* See More Button (Phase 2 Fact Sheet Panel) */}
+                {/* See More Toggle Button */}
                 <button
                   type="button"
-                  onClick={() => setIsHelpOpen(true)}
+                  onClick={() => setShowSeeMore((prev) => !prev)}
                   className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-sm py-3 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-1.5"
                 >
-                  <span>{t.journoSeeMoreBtn}</span>
-                  <span>→</span>
+                  <span>{showSeeMore ? t.journoSeeMoreCloseBtn : t.journoSeeMoreBtn}</span>
+                  <span>{showSeeMore ? "↑" : "↓"}</span>
                 </button>
+
+                {/* Expanded "See more" Fact Sheet & Forecast Section */}
+                {showSeeMore && (
+                  <div className="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4 space-y-3 animate-in fade-in duration-200 mt-2">
+                    {/* Supplementary Meteomatics Forecast Line (hidden if API fails or no data) */}
+                    {meteoForecast && (
+                      <div className="rounded-xl border border-neutral-200 bg-white p-3.5 space-y-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                          <span>🌧️ {t.journoForecastTitle}</span>
+                          {meteoForecast.updatedAtSriLanka && (
+                            <span className="font-normal text-[10px] text-neutral-400">
+                              {meteoForecast.updatedAtSriLanka} ({t.journoSriLankaTimeLabel})
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-baseline gap-2 pt-0.5">
+                          <span className="text-sm font-extrabold text-neutral-900">
+                            {t.journoNext7DaysForecast(meteoForecast.next7DaysMm)}
+                          </span>
+                          {meteoForecast.usualWeeklyMm !== null && (
+                            <span className="text-xs font-medium text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-md">
+                              {t.journoUsualWeeklyRain(
+                                meteoForecast.usualWeeklyMm,
+                                meteoForecast.yearsLabel
+                              )}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-[10px] text-neutral-400 pt-1 border-t border-neutral-100 leading-tight">
+                          {t.journoForecastAttribution}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Both Seasons Rainfall Breakdown */}
+                    <div className="rounded-xl border border-neutral-200 bg-white p-3.5 space-y-2 text-xs">
+                      <div className="font-bold text-neutral-800 uppercase tracking-wider text-[11px]">
+                        Seasonal Sowing Windows ({t.crops[selectedCrop] || CROPS[selectedCrop].name})
+                      </div>
+
+                      {/* Maha */}
+                      <div className="flex items-center justify-between py-1 border-b border-neutral-100">
+                        <div>
+                          <span className="font-bold text-neutral-900">Maha Season</span>
+                          <span className="text-neutral-500 text-[11px] block">
+                            Sowing: ~{windowAnalysis.maha.sowingStartDay}{" "}
+                            {windowAnalysis.maha.sowingStartMonth === 10
+                              ? "Oct"
+                              : windowAnalysis.maha.sowingStartMonth === 11
+                              ? "Nov"
+                              : "Apr"}{" "}
+                            ({windowAnalysis.maha.sowingTimingText})
+                          </span>
+                        </div>
+                        <span className="font-extrabold text-neutral-900 text-right">
+                          {windowAnalysis.maha.waterCoverageRatio !== null
+                            ? `${Math.round(windowAnalysis.maha.waterCoverageRatio * 100)}% rain covered`
+                            : `~${windowAnalysis.maha.windowRainfallMm ?? "—"} mm (unassessed)`}
+                        </span>
+                      </div>
+
+                      {/* Yala */}
+                      <div className="flex items-center justify-between py-1">
+                        <div>
+                          <span className="font-bold text-neutral-900">Yala Season</span>
+                          <span className="text-neutral-500 text-[11px] block">
+                            Sowing: ~{windowAnalysis.yala.sowingStartDay} Apr ({windowAnalysis.yala.sowingTimingText})
+                          </span>
+                        </div>
+                        <span className="font-extrabold text-neutral-900 text-right">
+                          {windowAnalysis.yala.waterCoverageRatio !== null
+                            ? `${Math.round(windowAnalysis.yala.waterCoverageRatio * 100)}% rain covered`
+                            : `~${windowAnalysis.yala.windowRainfallMm ?? "—"} mm (unassessed)`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Change Crop Button */}
                 <button

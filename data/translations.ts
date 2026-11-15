@@ -110,6 +110,12 @@ export interface TranslationStrings {
   journoSeeMoreBtn: string;
   journoChangeCropBtn: string;
   journoStartOverBtn: string;
+  journoSeeMoreCloseBtn: string;
+  journoForecastTitle: string;
+  journoNext7DaysForecast: (mm: number) => string;
+  journoUsualWeeklyRain: (mm: number, source: string) => string;
+  journoForecastAttribution: string;
+  journoSriLankaTimeLabel: string;
 
   // Localized crop names
   crops: Record<string, string>;
@@ -219,6 +225,12 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoSeeMoreBtn: "See more details",
     journoChangeCropBtn: "Change crop",
     journoStartOverBtn: "Start over",
+    journoSeeMoreCloseBtn: "Close details",
+    journoForecastTitle: "7-Day Rainfall Forecast (Supplementary)",
+    journoNext7DaysForecast: (mm: number) => `Next 7 days: about ${mm} mm (model forecast)`,
+    journoUsualWeeklyRain: (mm: number, source: string) => `Usual: ${mm} mm per week, ${source}`,
+    journoForecastAttribution: "Forecast: Meteomatics API (supplementary model) · Climatology: NASA POWER",
+    journoSriLankaTimeLabel: "Sri Lanka Time (UTC+5:30)",
 
     crops: {
       rice: "Rice (Paddy)",
@@ -332,6 +344,12 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoSeeMoreBtn: "වැඩිදුර විස්තර බලන්න",
     journoChangeCropBtn: "බෝගය මාරු කරන්න",
     journoStartOverBtn: "මුල සිට අරඹන්න",
+    journoSeeMoreCloseBtn: "විස්තර සඟවන්න",
+    journoForecastTitle: "දින 7 ක වැසි පුරෝකථනය (අතිරේක)",
+    journoNext7DaysForecast: (mm: number) => `ඉදිරි දින 7: මි.මී. ${mm} පමණ (ආකෘති පුරෝකථනය)`,
+    journoUsualWeeklyRain: (mm: number, source: string) => `සාමාන්‍යය: සතියකට මි.මී. ${mm}, ${source}`,
+    journoForecastAttribution: "පුරෝකථනය: Meteomatics API (අතිරේක ආකෘතිය) · දේශගුණය: NASA POWER",
+    journoSriLankaTimeLabel: "ශ්‍රී ලංකා වේලාව (UTC+5:30)",
 
     crops: {
       rice: "වී (Paddy)",
@@ -445,6 +463,12 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     journoSeeMoreBtn: "கூடுதல் விவரங்களைப் பார்க்க",
     journoChangeCropBtn: "பயிரை மாற்றவும்",
     journoStartOverBtn: "மீண்டும் தொடங்க",
+    journoSeeMoreCloseBtn: "விவரங்களை மூடு",
+    journoForecastTitle: "7 நாள் மழை முன்னறிவிப்பு (துணை)",
+    journoNext7DaysForecast: (mm: number) => `அடுத்த 7 நாட்கள்: சுமார் ${mm} மிமீ (மாதிரி முன்னறிவிப்பு)`,
+    journoUsualWeeklyRain: (mm: number, source: string) => `வழக்கமானது: வாரத்திற்கு ${mm} மிமீ, ${source}`,
+    journoForecastAttribution: "முன்னறிவிப்பு: Meteomatics API (துணை மாதிரி) · காலநிலை: NASA POWER",
+    journoSriLankaTimeLabel: "இலங்கை நேரம் (UTC+5:30)",
 
     crops: {
       rice: "நெல் (Paddy)",
