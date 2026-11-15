@@ -23,7 +23,17 @@ export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
     value: 30,
     unit: "days/month",
     description:
-      "Assumes crop water exposure window = full months + proportional share of the last month, using daysToMaturity / 30, starting from the crop's approximate sowing window start month in operations_timeline.csv (or April fallback for Rice in Yala).",
+      "Calculates daily rainfall rate per month (monthly rainfall / days in month) and integrates over the crop's exact duration days starting from the specific sowing day offset in operations_timeline.csv.",
+    validationStatus: "unvalidated - heuristic rule",
+  },
+  RICE_MAHA_SOWING_AND_DURATION_ASSUMPTION: {
+    id: "RICE_MAHA_SOWING_AND_DURATION_ASSUMPTION",
+    name: "Rice Maha 3.5-Month Class & Sowing Offset",
+    category: "rainfall",
+    value: 105,
+    unit: "days (starts 22 Oct)",
+    description:
+      "Rice Maha default uses the 3.5-month class (105 days duration), with nursery/sowing starting ~22 Oct (Oct wk3-4, DOA Crop Book p. 1). Note: 2.5-month and 3-month classes are sown in November per the operations timeline.",
     validationStatus: "unvalidated - heuristic rule",
   },
   RICE_YALA_SOWING_WINDOW_ASSUMPTION: {
@@ -33,7 +43,7 @@ export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
     value: 4,
     unit: "start month (April)",
     description:
-      "Because operations_timeline.csv omits Yala sowing timing for Rice, the model assumes April (start of standard Yala season) as the default sowing window start month.",
+      "Because operations_timeline.csv omits Yala sowing timing for Rice, the model assumes April 1 (start of standard Yala season) as the default sowing window start day.",
     validationStatus: "unvalidated - heuristic rule",
   },
   RAINFALL_COVERAGE_CAP: {

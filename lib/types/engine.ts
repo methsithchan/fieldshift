@@ -67,6 +67,8 @@ export interface EvaluatedStep {
   sowingTiming?: {
     approxTiming: string;
     startMonth: number;
+    startDay: number;
+    durationDays?: number;
     sourcePage: number;
     confidence: string;
   };

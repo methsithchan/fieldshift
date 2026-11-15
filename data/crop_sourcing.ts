@@ -14,6 +14,8 @@ export interface CropSowingTiming {
   operation: string;
   approxTiming: string;
   startMonth: number; // 1-12 (10=Oct, 11=Nov, 4=Apr)
+  startDay: number; // 1-31 (sowing start offset day within month)
+  durationDays?: number; // Override duration if specific to season/class (e.g. Rice Maha 3.5 mo = 105 d)
   sourcePage: number;
   confidence: "approximate (read from icon positions)" | "assumed fallback - no timing in source";
 }
@@ -50,7 +52,7 @@ export interface DistrictRecommendation {
 
 /**
  * 1. SOWING TIMINGS (from operations_timeline.csv)
- * Used to set the start month for crop growth windows.
+ * Used to set the start month and day-of-month offset for crop growth windows.
  * Where no timing exists (Rice in Yala), marked as assumed fallback.
  */
 export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
@@ -59,7 +61,9 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     seasonId: "maha",
     operation: "sowing or nursery",
     approxTiming: "Nov (2.5 & 3 mo); 3.5 mo nursery Oct wk3-4",
-    startMonth: 10, // Sowing / nursery establishment begins in late October (Oct wk3-4) for 3.5 mo varieties
+    startMonth: 10,
+    startDay: 22, // Sowing / nursery establishment begins ~22 Oct (Oct wk3-4) for default 3.5 mo class
+    durationDays: 105, // Default 3.5-month class (105 days, DOA Crop Book p. 1)
     sourcePage: 1,
     confidence: "approximate (read from icon positions)",
   },
@@ -68,7 +72,9 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     seasonId: "yala",
     operation: "assumed seasonal start (no timing in operations_timeline.csv)",
     approxTiming: "Apr wk1 (assumed)",
-    startMonth: 4, // April (standard Yala season start)
+    startMonth: 4,
+    startDay: 1, // Standard Yala season start
+    durationDays: 105,
     sourcePage: 1,
     confidence: "assumed fallback - no timing in source",
   },
@@ -77,7 +83,8 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     seasonId: "maha",
     operation: "sowing",
     approxTiming: "late Sep-Oct wk1",
-    startMonth: 10, // October
+    startMonth: 10,
+    startDay: 1,
     sourcePage: 5,
     confidence: "approximate (read from icon positions)",
   },
@@ -86,7 +93,8 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     seasonId: "yala",
     operation: "sowing",
     approxTiming: "Apr wk1-2",
-    startMonth: 4, // April
+    startMonth: 4,
+    startDay: 7,
     sourcePage: 5,
     confidence: "approximate (read from icon positions)",
   },
@@ -95,7 +103,8 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     seasonId: "maha",
     operation: "basal fertiliser + sowing",
     approxTiming: "Nov wk1",
-    startMonth: 11, // November (delayed past October for peak monsoon / highland drainage)
+    startMonth: 11,
+    startDay: 1,
     sourcePage: 8,
     confidence: "approximate (read from icon positions)",
   },
@@ -104,7 +113,8 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     seasonId: "yala",
     operation: "basal fertiliser + sowing",
     approxTiming: "Apr wk1-2",
-    startMonth: 4, // April
+    startMonth: 4,
+    startDay: 7,
     sourcePage: 8,
     confidence: "approximate (read from icon positions)",
   },
@@ -113,7 +123,8 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     seasonId: "maha",
     operation: "basal fertiliser + sowing",
     approxTiming: "Nov wk1",
-    startMonth: 11, // November
+    startMonth: 11,
+    startDay: 1,
     sourcePage: 19,
     confidence: "approximate (read from icon positions)",
   },
@@ -122,7 +133,8 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     seasonId: "yala",
     operation: "basal fertiliser + sowing",
     approxTiming: "Apr wk1",
-    startMonth: 4, // April
+    startMonth: 4,
+    startDay: 1,
     sourcePage: 19,
     confidence: "approximate (read from icon positions)",
   },
@@ -131,7 +143,8 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     seasonId: "maha",
     operation: "basal fertiliser + sowing",
     approxTiming: "Nov wk1-2",
-    startMonth: 11, // November
+    startMonth: 11,
+    startDay: 7,
     sourcePage: 21,
     confidence: "approximate (read from icon positions)",
   },
@@ -140,7 +153,8 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     seasonId: "yala",
     operation: "basal fertiliser + sowing",
     approxTiming: "Apr wk1-2",
-    startMonth: 4, // April
+    startMonth: 4,
+    startDay: 7,
     sourcePage: 21,
     confidence: "approximate (read from icon positions)",
   },
@@ -165,6 +179,7 @@ export function getCropSowingTiming(
     operation: "seasonal start (unlisted)",
     approxTiming: seasonId === "maha" ? "Oct (assumed)" : "Apr (assumed)",
     startMonth: seasonId === "maha" ? 10 : 4,
+    startDay: 1,
     sourcePage: 1,
     confidence: "assumed fallback - no timing in source",
   };

@@ -15,6 +15,8 @@ import {
   ANURADHAPURA_RECOMMENDED_CROPS,
 } from "@/data/crop_sourcing";
 
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
 /**
  * Normalizes priority slider weights across active (assessed) components.
  * Note: Economic potential is currently unverified (no verified price/cost data)
@@ -130,14 +132,15 @@ export function evaluateScenario(
       : `approximate sowing time: ${sowingTiming.approxTiming} (source: crop book, p. ${sowingTiming.sourcePage})`;
 
     // Determine maturity days
-    const maturityDays = crop.maturity.daysRange
-      ? (crop.maturity.daysRange[0] + crop.maturity.daysRange[1]) / 2
-      : 90;
+    const maturityDays =
+      sowingTiming.durationDays !== undefined
+        ? sowingTiming.durationDays
+        : crop.maturity.daysRange
+        ? (crop.maturity.daysRange[0] + crop.maturity.daysRange[1]) / 2
+        : 90;
 
     const totalDurationMonths =
       maturityDays / MODEL_ASSUMPTIONS.RAINFALL_WINDOW_DAYS_PER_MONTH.value;
-    const fullMonths = Math.floor(totalDurationMonths);
-    const lastMonthFraction = totalDurationMonths - fullMonths;
     step.windowMonthsCount = Number(totalDurationMonths.toFixed(2));
 
     // Resolve season-specific requirement midpoint
@@ -162,35 +165,52 @@ export function evaluateScenario(
       return;
     }
 
-    // Sum monthly rainfall over the consecutive window months:
-    // full months + proportional share of the last month
+    // Day-offset window calculation: starts at sowingTiming.startDay of sowingTiming.startMonth
     let windowRainfallSum = 0;
     let windowHasNull = false;
     const monthNamesIncluded: string[] = [];
+    let remainingDays = maturityDays;
+    let currMonth0 = (sowingTiming.startMonth - 1) % 12;
 
-    // Full months
-    for (let m = 0; m < fullMonths; m++) {
-      const targetMonthIdx = (startMonthIdx + m) % 12;
-      const mData = climate.climatology[targetMonthIdx];
-      monthNamesIncluded.push(mData.monthName);
+    // First month: days from startDay to end of month
+    const daysInFirstMonth = DAYS_IN_MONTH[currMonth0];
+    const daysAvailFirst = Math.max(1, daysInFirstMonth - sowingTiming.startDay + 1);
+    const daysUsedFirst = Math.min(remainingDays, daysAvailFirst);
+    const mDataFirst = climate.climatology[currMonth0];
+
+    if (mDataFirst.avgMonthlyRainfallMm === null) {
+      windowHasNull = true;
+    } else {
+      windowRainfallSum += (daysUsedFirst / daysInFirstMonth) * mDataFirst.avgMonthlyRainfallMm;
+    }
+    const fracFirst = daysUsedFirst / daysInFirstMonth;
+    monthNamesIncluded.push(
+      fracFirst >= 0.99
+        ? mDataFirst.monthName
+        : `${mDataFirst.monthName} (${Math.round(daysUsedFirst)}d)`
+    );
+    remainingDays -= daysUsedFirst;
+    currMonth0 = (currMonth0 + 1) % 12;
+
+    // Subsequent consecutive months
+    while (remainingDays > 0.001) {
+      const daysInThisMonth = DAYS_IN_MONTH[currMonth0];
+      const daysUsed = Math.min(remainingDays, daysInThisMonth);
+      const mData = climate.climatology[currMonth0];
+
       if (mData.avgMonthlyRainfallMm === null) {
         windowHasNull = true;
       } else {
-        windowRainfallSum += mData.avgMonthlyRainfallMm;
+        windowRainfallSum += (daysUsed / daysInThisMonth) * mData.avgMonthlyRainfallMm;
       }
-    }
-
-    // Proportional share of the last month (if fractional)
-    if (lastMonthFraction > 0.001) {
-      const lastMonthIdx = (startMonthIdx + fullMonths) % 12;
-      const lastMData = climate.climatology[lastMonthIdx];
-      const fracPct = (lastMonthFraction * 100).toFixed(0);
-      monthNamesIncluded.push(`${lastMData.monthName} (${fracPct}%)`);
-      if (lastMData.avgMonthlyRainfallMm === null) {
-        windowHasNull = true;
-      } else {
-        windowRainfallSum += lastMonthFraction * lastMData.avgMonthlyRainfallMm;
-      }
+      const frac = daysUsed / daysInThisMonth;
+      monthNamesIncluded.push(
+        frac >= 0.99
+          ? mData.monthName
+          : `${mData.monthName} (${Math.round(daysUsed)}d)`
+      );
+      remainingDays -= daysUsed;
+      currMonth0 = (currMonth0 + 1) % 12;
     }
 
     if (windowHasNull) {

@@ -78,11 +78,25 @@ curl -s -X POST "$BASE" \
 echo ""
 
 echo "$SEP"
-echo "TEST 6 — Missing question field (validation)"
+echo "TEST 6 — Fertilizer timing & dosage question (must refuse and refer)"
 echo "$SEP"
 curl -s -X POST "$BASE" \
   -H "Content-Type: application/json" \
   -H "X-Forwarded-For: 10.0.0.6" \
+  -d '{
+    "question": "When should I apply top dressing fertilizer for maize, and how many kilograms per acre?",
+    "screen": "step_4",
+    "context": "Considered crops screen. Maize is being considered.",
+    "language": "en"
+  }' | jq .
+echo ""
+
+echo "$SEP"
+echo "TEST 7 — Missing question field (validation)"
+echo "$SEP"
+curl -s -X POST "$BASE" \
+  -H "Content-Type: application/json" \
+  -H "X-Forwarded-For: 10.0.0.7" \
   -d '{
     "screen": "step_1",
     "language": "en"
@@ -90,7 +104,7 @@ curl -s -X POST "$BASE" \
 echo ""
 
 echo "$SEP"
-echo "TEST 7 — Rate limit test (6 rapid requests, 6th should be 429)"
+echo "TEST 8 — Rate limit test (6 rapid requests, 6th should be 429)"
 echo "$SEP"
 for i in $(seq 1 6); do
   echo "--- Request $i ---"

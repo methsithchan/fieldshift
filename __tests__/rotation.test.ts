@@ -141,12 +141,13 @@ describe("Rotation Engine — Error Handling for Unknown Crop ID", () => {
 });
 
 describe("Rotation Engine — Rainfall Coverage Calculation", () => {
-  it("computes water coverage using fractional growth window (full months + proportional share of last month)", () => {
-    // Green Gram in Yala (starts April wk1-2 per operations_timeline.csv, month index 3).
-    // Duration: 55-65 days (Crop Book p. 8) -> midpoint 60 days -> 60 / 30 = 2.0 full months
-    // Rainfall in mock: Apr (140.5) + May (68.2) = 208.7 mm
+  it("computes water coverage using day-offset growth window (sowing start day + duration days)", () => {
+    // Green Gram in Yala (starts ~7 Apr / Apr wk1-2 per operations_timeline.csv, month index 3).
+    // Duration: 55-65 days (Crop Book p. 8) -> midpoint 60 days -> 60 / 30 = 2.0 months
+    // In mock: Apr 24 days (24/30 * 140.5 = 112.4) + May 31 days (68.2) + Jun 5 days (5/30 * 15.1 = 2.52)
+    // Total window rain = 112.4 + 68.2 + 2.5167 = 183.1 mm
     // Green gram Yala water need: 270 mm
-    // Expected coverage: min(1.0, 208.7 / 270) = ~0.77
+    // Expected coverage: min(1.0, 183.1 / 270) = ~0.68
     const scenario: RotationScenarioInput = {
       id: "B",
       title: "Green Gram Test",
@@ -159,8 +160,8 @@ describe("Rotation Engine — Rainfall Coverage Calculation", () => {
     };
 
     const result = evaluateScenario(scenario, mockPadaviyaClimate, defaultSoil, defaultWeights);
-    expect(result.scores.rainfallCoverage).toBeCloseTo(0.77, 2);
-    expect(result.steps[0].windowRainfallMm).toBe(208.7);
+    expect(result.scores.rainfallCoverage).toBeCloseTo(0.68, 2);
+    expect(result.steps[0].windowRainfallMm).toBe(183.1);
     expect(result.steps[0].windowMonthsCount).toBe(2.0);
     expect(result.steps[0].cropWaterNeedMidpointMm).toBe(270);
   });
