@@ -195,7 +195,7 @@ export default function ResultsCards({ evaluations }: ResultsCardsProps) {
                         {budgets
                           .map(
                             (b) =>
-                              `${b.scenario} (${b.priceYear} price year: ~Rs ${b.totalCostRsPerAcre.toLocaleString()}/ac cost, yield ${b.yieldPerAcre}, net Rs ${b.netProfitRsPerAcre.toLocaleString()}/ac; source: crop book, p. ${b.sourcePage})`
+                              `${b.scenario} (${b.priceYear} price year: ~Rs ${b.totalCostRsPerAcre.toLocaleString()}/ac cost, yield ${b.yieldPerAcre}, net Rs ${b.netProfitRsPerAcre.toLocaleString()}/ac; source: the crop recommendations book, p. ${b.sourcePage})`
                           )
                           .join(" | ")}
                       </div>
@@ -204,11 +204,11 @@ export default function ResultsCards({ evaluations }: ResultsCardsProps) {
                 </div>
               </div>
 
-              {/* Climate Hazard Advice (DOA Crop Book) */}
+              {/* Climate Hazard Advice (the crop recommendations book) */}
               <div className="my-3 rounded-lg bg-amber-50/40 border border-amber-200/80 p-2.5 text-xs text-slate-800 space-y-1.5">
                 <div className="font-semibold text-amber-950 flex items-center gap-1.5">
                   <span>🌦️</span>
-                  <span>Climate Hazard Advice (DOA Crop Book):</span>
+                  <span>Climate Hazard Advice (the crop recommendations book):</span>
                 </div>
                 <div className="space-y-2 text-[11px] leading-relaxed">
                   {Array.from(new Set(scenario.steps.map((s) => s.crop))).map((crop) => {
@@ -222,13 +222,13 @@ export default function ResultsCards({ evaluations }: ResultsCardsProps) {
                         {dry && (
                           <div className="text-amber-900 mt-0.5">
                             <span className="font-medium text-amber-800">If it is dry:</span> {dry.advice}{" "}
-                            <span className="text-amber-700 text-[10px]">(source: crop book, p. {dry.sourcePage})</span>
+                            <span className="text-amber-700 text-[10px]">(source: the crop recommendations book, p. {dry.sourcePage})</span>
                           </div>
                         )}
                         {wet && (
                           <div className="text-blue-900 mt-0.5">
                             <span className="font-medium text-blue-800">If it is very wet:</span> {wet.advice}{" "}
-                            <span className="text-blue-700 text-[10px]">(source: crop book, p. {wet.sourcePage})</span>
+                            <span className="text-blue-700 text-[10px]">(source: the crop recommendations book, p. {wet.sourcePage})</span>
                           </div>
                         )}
                       </div>

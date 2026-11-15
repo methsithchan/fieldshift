@@ -86,15 +86,23 @@ run_test "7" "Fertilizer timing & dosage question (must refuse and refer)" "10.0
   "language": "en"
 }'
 
-# 8. Missing question field (validation)
-run_test "8" "Missing question field (validation)" "10.0.0.8" '{
+# 8. Out-of-scope question (must decline politely)
+run_test "8" "Out-of-scope question (must decline politely)" "10.0.0.8" '{
+  "question": "What is the capital of France?",
+  "screen": "results",
+  "context": "Rotation strategy results page.",
+  "language": "en"
+}'
+
+# 9. Missing question field (validation)
+run_test "9" "Missing question field (validation)" "10.0.0.9" '{
   "screen": "language",
   "language": "en"
 }'
 
-# 9. Rate limit test
+# 10. Rate limit test
 echo "$SEP"
-echo "TEST 9 — Rate limit test (6 rapid requests, 6th should be 429)"
+echo "TEST 10 — Rate limit test (6 rapid requests, 6th should be 429)"
 echo "$SEP"
 for i in $(seq 1 6); do
   echo "--- Request $i ---"

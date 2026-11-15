@@ -1,5 +1,7 @@
 /**
- * Sourced agronomic data from Department of Agriculture Crop Book (DOA Sri Lanka).
+ * Sourced agronomic data from the crop recommendations book.
+ *
+ * TODO: Publisher is unconfirmed; fill in official title, publisher, and publication year once confirmed.
  *
  * RIGOROUS INCLUSION RULES:
  * - fertilizer_schedule.csv is strictly EXCLUDED.
@@ -63,7 +65,7 @@ export const OPERATIONS_TIMELINE_SOWING: CropSowingTiming[] = [
     approxTiming: "Nov (2.5 & 3 mo); 3.5 mo nursery Oct wk3-4",
     startMonth: 10,
     startDay: 22, // Sowing / nursery establishment begins ~22 Oct (Oct wk3-4) for default 3.5 mo class
-    durationDays: 105, // Default 3.5-month class (105 days, DOA Crop Book p. 1)
+    durationDays: 105, // Default 3.5-month class (105 days, the crop recommendations book, p. 1)
     sourcePage: 1,
     confidence: "approximate (read from icon positions)",
   },

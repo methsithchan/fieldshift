@@ -33,7 +33,7 @@ export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
     value: 105,
     unit: "days (starts 22 Oct)",
     description:
-      "Rice Maha default uses the 3.5-month class (105 days duration), with nursery/sowing starting ~22 Oct (Oct wk3-4, DOA Crop Book p. 1). Note: 2.5-month and 3-month classes are sown in November per the operations timeline.",
+      "Rice Maha default uses the 3.5-month class (105 days duration), with nursery/sowing starting ~22 Oct (Oct wk3-4, the crop recommendations book, p. 1). Note: 2.5-month and 3-month classes are sown in November per the operations timeline.",
     validationStatus: "unvalidated - heuristic rule",
   },
   RICE_YALA_SOWING_WINDOW_ASSUMPTION: {

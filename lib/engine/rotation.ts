@@ -129,7 +129,7 @@ export function evaluateScenario(
 
     const approxSowingText = sowingTiming.confidence.includes("fallback")
       ? `approximate sowing time: ${sowingTiming.approxTiming} (assumed fallback - no timing in source, p. ${sowingTiming.sourcePage})`
-      : `approximate sowing time: ${sowingTiming.approxTiming} (source: crop book, p. ${sowingTiming.sourcePage})`;
+      : `approximate sowing time: ${sowingTiming.approxTiming} (source: the crop recommendations book, p. ${sowingTiming.sourcePage})`;
 
     // Determine maturity days
     const maturityDays =
@@ -264,7 +264,7 @@ export function evaluateScenario(
       const rec = ANURADHAPURA_RECOMMENDED_CROPS[s.crop.id];
       if (rec && rec.recommended) {
         reasons.push(
-          `${s.crop.name}: Recommended in Anuradhapura (all zones) (source: crop book, p. ${rec.sourcePage}).`
+          `${s.crop.name}: Recommended in Anuradhapura (all zones) (source: the crop recommendations book, p. ${rec.sourcePage}).`
         );
       }
     }

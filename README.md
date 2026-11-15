@@ -76,11 +76,11 @@ cp .env.example .env.local
 |------|--------|------------|-------|
 | Climate (precipitation, temperature, humidity, root-zone soil wetness) | [NASA POWER](https://power.larc.nasa.gov/) | ~0.5° (~55 km), daily | 2015–2025 (11 years). Free, no API key. `-999` = missing value. |
 | Soil properties | User input | Field-level | Self-reported with confidence labels |
-| Crop characteristics & durations | `data/crops.ts`, `data/crop_sourcing.ts` | — | Sourced from official Sri Lanka Department of Agriculture Crop Book (DOA), with page citations. |
-| Sowing windows & timelines | `data/crop_sourcing.ts` | — | DOA Crop Book `operations_timeline.csv` (Maha sowing: Nov for pulses, Oct for maize/rice). |
-| Climate hazard advice | `data/crop_sourcing.ts` | — | DOA Crop Book `climate_hazard_advice.csv` (drought & excess rain management). |
-| Historic reference budgets | `data/crop_sourcing.ts` | — | DOA Crop Book `economics_per_acre.csv` (2013/2015 price years; not current prices). |
-| District recommendations | `data/crop_sourcing.ts` | — | DOA Crop Book `districts_zones.csv` (Anuradhapura all zones recommendations). |
+| Crop characteristics & durations | `data/crops.ts`, `data/crop_sourcing.ts` | — | Sourced from the crop recommendations book, with page citations (TODO: publisher unconfirmed). |
+| Sowing windows & timelines | `data/crop_sourcing.ts` | — | The crop recommendations book `operations_timeline.csv` (Maha sowing: Nov for pulses, Oct for maize/rice). |
+| Climate hazard advice | `data/crop_sourcing.ts` | — | The crop recommendations book `climate_hazard_advice.csv` (drought & excess rain management). |
+| Historic reference budgets | `data/crop_sourcing.ts` | — | The crop recommendations book `economics_per_acre.csv` (2013/2015 price years; not current prices). |
+| District recommendations | `data/crop_sourcing.ts` | — | The crop recommendations book `districts_zones.csv` (Anuradhapura all zones recommendations). |
 
 ### NASA POWER Credit
 
