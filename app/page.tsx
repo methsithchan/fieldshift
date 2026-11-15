@@ -6,8 +6,12 @@ import { useRouter } from "next/navigation";
 import { LanguageCode, TRANSLATIONS } from "@/data/translations";
 import { CROPS } from "@/data/crops";
 import { useNasaData } from "@/lib/hooks/useNasaData";
-import { computeBestRainWindow } from "@/lib/engine/crop-window";
+import { computeCropSeasonWindow, computeBestRainWindow } from "@/lib/engine/crop-window";
 import { useMeteomaticsForecast } from "@/lib/hooks/useMeteomaticsForecast";
+import { buildFarmerScenarios } from "@/lib/engine/farmer-strategies";
+import { evaluateAllScenarios } from "@/lib/engine/rotation";
+import { SoilFormState, PriorityWeights } from "@/lib/types/engine";
+import { CLIMATE_HAZARD_ADVICE } from "@/data/crop_sourcing";
 import HelpSheet from "@/components/Wizard/HelpSheet";
 
 // Default coordinates: Padaviya (~8.83°N, 80.76°E)
@@ -44,7 +48,7 @@ function getSowingMonthRange(
   }
   if (cropId === "green_gram" && seasonId === "maha") {
     if (lang === "si") return "නොවැම්බර්";
-    if (lang === "ta") return "நவம்பர்";
+    if (lang === "ta") return "நවம்பர்";
     return "November";
   }
   if (seasonId === "maha") {
@@ -52,31 +56,43 @@ function getSowingMonthRange(
     if (lang === "ta") return "அக்டோபர்";
     return "October";
   }
-  // Yala
+  // Yala for all 5 crops
   if (lang === "si") return "අප්‍රේල්";
   if (lang === "ta") return "ஏப்ரல்";
   return "April";
 }
 
+const CROP_ICONS: Record<string, string> = {
+  rice: "🌾",
+  green_gram: "🌱",
+  cowpea: "🥜",
+  black_gram: "🌿",
+  maize: "🌽",
+};
+
 export default function Home() {
   const router = useRouter();
 
-  // Wizard state: 1 (Language), 2 (Occupation), 3 (Location), 4 (Crop), 5 (Result)
+  // Wizard state: 1 (Language), 2 (Location), 3 (Crops), 4 (Result Screen)
   const [step, setStep] = useState<number>(1);
   const [lang, setLang] = useState<LanguageCode>("en");
-  const [role, setRole] = useState<"farmer" | "researcher">("farmer");
 
-  // Step 3: Location
+  // Step 2: Location
   const [lat, setLat] = useState<number>(DEFAULT_PADAVIYA_LAT);
   const [lon, setLon] = useState<number>(DEFAULT_PADAVIYA_LON);
   const [locationName, setLocationName] = useState<string>("Padaviya (Dry Zone)");
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [locError, setLocError] = useState<string | null>(null);
 
-  // Step 4: Chosen Crop (one of the 5 verified crops)
-  const [selectedCrop, setSelectedCrop] = useState<typeof CROP_IDS[number]>("rice");
+  // Step 3: Dual-Season Crop Selection
+  const [mahaCrop, setMahaCrop] = useState<typeof CROP_IDS[number]>("rice");
+  const [yalaCrop, setYalaCrop] = useState<typeof CROP_IDS[number]>("rice");
+  const [yalaTouched, setYalaTouched] = useState<boolean>(false);
 
-  // Step 5: See More panel toggle
+  // Step 4: Hero Season Switcher (defaults to "maha")
+  const [activeSeason, setActiveSeason] = useState<"maha" | "yala">("maha");
+
+  // See More panel toggle
   const [showSeeMore, setShowSeeMore] = useState<boolean>(false);
 
   // Help Sheet state
@@ -88,18 +104,85 @@ export default function Home() {
   // NASA Data hook
   const { data: climateData, loading: climateLoading, error: climateError } = useNasaData(lat, lon);
 
-  // Supplementary Meteomatics Forecast hook (active on Step 5, hides if API fails/no data)
+  // Supplementary Meteomatics Forecast hook (active on Result step, hides if API fails/no data)
   const { forecast: meteoForecast } = useMeteomaticsForecast(
     lat,
     lon,
     climateData,
-    step === 5
+    step === 4
   );
 
-  // Compute best rain-supported window
-  const windowAnalysis = useMemo(
-    () => computeBestRainWindow(selectedCrop, climateData),
-    [selectedCrop, climateData]
+  // Single-crop assumption check: true if user selected the same crop in both seasons
+  const isSingleCrop = mahaCrop === yalaCrop;
+
+  // Handlers for crop dropdowns
+  const handleMahaChange = (c: typeof CROP_IDS[number]) => {
+    setMahaCrop(c);
+    if (!yalaTouched) {
+      setYalaCrop(c); // Default Yala = same as Maha unless user has manually customized Yala
+    }
+  };
+
+  const handleYalaChange = (c: typeof CROP_IDS[number]) => {
+    setYalaCrop(c);
+    setYalaTouched(true);
+  };
+
+  // Compute Active Season Rain Window for Hero
+  const activeCrop = activeSeason === "maha" ? mahaCrop : yalaCrop;
+  const activeWindow = useMemo(
+    () => computeCropSeasonWindow(activeCrop, activeSeason, climateData),
+    [activeCrop, activeSeason, climateData]
+  );
+
+  const activeCoveragePercent =
+    activeWindow.waterCoverageRatio !== null
+      ? Math.round(activeWindow.waterCoverageRatio * 100)
+      : null;
+
+  // Detailed Maha and Yala windows for Seasonal Sowing Windows card
+  const mahaWindow = useMemo(
+    () => computeCropSeasonWindow(mahaCrop, "maha", climateData),
+    [mahaCrop, climateData]
+  );
+  const yalaWindow = useMemo(
+    () => computeCropSeasonWindow(yalaCrop, "yala", climateData),
+    [yalaCrop, climateData]
+  );
+
+  // Default neutral soil and priority weights for wizard evaluation
+  const defaultSoil: SoilFormState = useMemo(
+    () => ({
+      ph: null,
+      phConfidence: "unknown",
+      texture: "unknown",
+      textureConfidence: "unknown",
+      organicCarbon: "unknown",
+      organicCarbonConfidence: "unknown",
+      drainage: "unknown",
+      drainageConfidence: "unknown",
+    }),
+    []
+  );
+
+  const defaultWeights: PriorityWeights = useMemo(
+    () => ({
+      rainfallCoverage: 50,
+      soilHealth: 50,
+      economicPotential: 0,
+    }),
+    []
+  );
+
+  // Three strategies evaluation
+  const scenarios = useMemo(
+    () => buildFarmerScenarios(mahaCrop, yalaCrop, []),
+    [mahaCrop, yalaCrop]
+  );
+
+  const evaluations = useMemo(
+    () => evaluateAllScenarios(scenarios, climateData, defaultSoil, defaultWeights),
+    [scenarios, climateData, defaultSoil, defaultWeights]
   );
 
   // Geolocation Handler
@@ -128,12 +211,6 @@ export default function Home() {
     );
   };
 
-  const strongest = windowAnalysis.strongestSeason;
-  const coveragePercent =
-    strongest.waterCoverageRatio !== null
-      ? Math.round(strongest.waterCoverageRatio * 100)
-      : null;
-
   // Region Guard boundaries
   const isOutsideSriLanka =
     lat < SRI_LANKA_BOX.latMin ||
@@ -148,23 +225,29 @@ export default function Home() {
       lon < DRY_ZONE_BOX.lonMin ||
       lon > DRY_ZONE_BOX.lonMax);
 
-  // Localized Season Name
-  const displaySeasonName =
-    strongest.seasonId === "maha"
-      ? lang === "si"
-        ? "මහ කන්නය (Maha)"
-        : lang === "ta"
-        ? "பெரும்போகம் (Maha)"
-        : "Maha Season"
-      : lang === "si"
-      ? "යල කන්නය (Yala)"
-      : lang === "ta"
-      ? "சிறுபோகம் (Yala)"
-      : "Yala Season";
+  // Localized Active Season Name
+  const displayActiveSeasonName =
+    activeSeason === "maha" ? t.journoMahaSeasonLabel : t.journoYalaSeasonLabel;
 
   // Context summary for Help LLM prompt
   const getScreenContextText = (): string => {
-    return `Journo Redesign flow, Step ${step}. Language: ${lang}. Role: ${role}. Location: ${locationName} (${lat}°N, ${lon}°E). Selected crop: ${selectedCrop}. Strongest rain window: ${strongest.seasonName} (${strongest.sowingTimingText}), rain coverage: ${coveragePercent !== null ? coveragePercent + "%" : "unverified water requirement"}.`;
+    return `Field Shift Farmer Wizard.
+Language: ${lang}.
+Location: ${locationName} (${lat}°N, ${lon}°E).
+In Maha farmer grows: ${CROPS[mahaCrop]?.name || mahaCrop}.
+In Yala farmer grows: ${CROPS[yalaCrop]?.name || yalaCrop}.
+Active viewing season: ${activeSeason} (${displayActiveSeasonName}).
+Active window: ${activeWindow.sowingTimingText}, rainfall: ${activeWindow.windowRainfallMm} mm, water need: ${activeWindow.cropWaterNeedMm ?? "unverified"} mm.
+Coverage: ${activeCoveragePercent !== null ? activeCoveragePercent + "%" : "unverified water need"}.
+NASA POWER 11-Year Climatology for location:
+- Maha rainfall: ${climateData?.seasonalSummary.mahaRainfallMm ?? "N/A"} mm, Mean temp: ${climateData?.seasonalSummary.mahaAvgTempC ?? "N/A"}°C, Root-zone soil wetness: ${climateData?.seasonalSummary.mahaAvgSoilWetness ?? "N/A"}
+- Yala rainfall: ${climateData?.seasonalSummary.yalaRainfallMm ?? "N/A"} mm, Mean temp: ${climateData?.seasonalSummary.yalaAvgTempC ?? "N/A"}°C, Root-zone soil wetness: ${climateData?.seasonalSummary.yalaAvgSoilWetness ?? "N/A"}
+- Annual total rainfall: ${climateData?.seasonalSummary.annualRainfallMm ?? "N/A"} mm
+Meteomatics 7-day model forecast: ${meteoForecast ? `${meteoForecast.next7DaysMm} mm` : "forecast pending or unavailable"}.
+Rotation Strategies:
+- Strategy A: Current baseline (${evaluations[0]?.steps.map((s) => s.crop.id).join(" -> ")})
+- Strategy B: Legume integration (${evaluations[1]?.steps.map((s) => s.crop.id).join(" -> ")})
+- Strategy C: Diversified rotation (${evaluations[2]?.steps.map((s) => s.crop.id).join(" -> ")})`;
   };
 
   return (
@@ -213,13 +296,13 @@ export default function Home() {
       {/* Main Single Card Area */}
       <div className="max-w-md mx-auto w-full my-auto py-4">
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-neutral-200/80 transition-all">
-          {/* Progress Dots */}
+          {/* Progress Dots: 4 Steps (Language, Location, Crops, Result) */}
           <div className="flex items-center justify-between mb-6">
             {step > 1 ? (
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
-                className="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors py-1.5 px-2 rounded-lg -ml-2 min-h-[44px] flex items-center"
+                className="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors py-1.5 px-2 rounded-lg -ml-2 min-h-[44px] flex items-center cursor-pointer"
               >
                 {t.journoBackBtn}
               </button>
@@ -228,7 +311,7 @@ export default function Home() {
             )}
 
             <div className="flex items-center gap-1.5">
-              {[1, 2, 3, 4, 5].map((s) => (
+              {[1, 2, 3, 4].map((s) => (
                 <div
                   key={s}
                   className={`h-2 rounded-full transition-all duration-200 ${
@@ -243,7 +326,7 @@ export default function Home() {
             </div>
 
             <span className="text-[11px] font-semibold text-neutral-400">
-              {step}/5
+              {step}/4
             </span>
           </div>
 
@@ -269,7 +352,7 @@ export default function Home() {
                     key={item.code}
                     type="button"
                     onClick={() => setLang(item.code as LanguageCode)}
-                    className={`w-full min-h-[58px] p-4 rounded-2xl border-2 flex items-center justify-between text-left transition-all active:scale-[0.99] ${
+                    className={`w-full min-h-[58px] p-4 rounded-2xl border-2 flex items-center justify-between text-left transition-all active:scale-[0.99] cursor-pointer ${
                       lang === item.code
                         ? "border-black bg-neutral-50/80 shadow-2xs"
                         : "border-neutral-200 hover:border-neutral-300 bg-white"
@@ -297,7 +380,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-base py-3.5 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center"
+                className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-base py-3.5 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center cursor-pointer"
               >
                 {t.journoContinueBtn}
               </button>
@@ -305,96 +388,9 @@ export default function Home() {
           )}
 
           {/* ══════════════════════════════════════════
-              STEP 2: OCCUPATION (ROLE)
+              STEP 2: LOCATION
              ══════════════════════════════════════════ */}
           {step === 2 && (
-            <div className="animate-in fade-in duration-200">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight leading-tight">
-                {t.journoRoleTitle}
-              </h1>
-              <p className="text-sm text-neutral-500 font-medium mt-1 mb-6">
-                {t.journoRoleSubtitle}
-              </p>
-
-              <div className="space-y-3 mb-8">
-                {/* Farmer Option */}
-                <button
-                  type="button"
-                  onClick={() => setRole("farmer")}
-                  className={`w-full min-h-[72px] p-4 rounded-2xl border-2 flex items-center justify-between text-left transition-all active:scale-[0.99] ${
-                    role === "farmer"
-                      ? "border-black bg-neutral-50/80 shadow-2xs"
-                      : "border-neutral-200 hover:border-neutral-300 bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5">
-                    <span className="text-3xl">🌾</span>
-                    <div>
-                      <div className="font-bold text-base text-neutral-900">
-                        {t.journoRoleFarmer}
-                      </div>
-                      <div className="text-xs text-neutral-500 mt-0.5">
-                        {t.journoRoleFarmerDesc}
-                      </div>
-                    </div>
-                  </div>
-                  {role === "farmer" && (
-                    <span className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
-                      ✓
-                    </span>
-                  )}
-                </button>
-
-                {/* Researcher Option */}
-                <button
-                  type="button"
-                  onClick={() => setRole("researcher")}
-                  className={`w-full min-h-[72px] p-4 rounded-2xl border-2 flex items-center justify-between text-left transition-all active:scale-[0.99] ${
-                    role === "researcher"
-                      ? "border-black bg-neutral-50/80 shadow-2xs"
-                      : "border-neutral-200 hover:border-neutral-300 bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5">
-                    <span className="text-3xl">🔬</span>
-                    <div>
-                      <div className="font-bold text-base text-neutral-900">
-                        {t.journoRoleResearcher}
-                      </div>
-                      <div className="text-xs text-neutral-500 mt-0.5">
-                        {t.journoRoleResearcherDesc}
-                      </div>
-                    </div>
-                  </div>
-                  {role === "researcher" && (
-                    <span className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
-                      ✓
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* Black Pill Next Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (role === "researcher") {
-                    router.push(`/expert?lat=${lat}&lon=${lon}`);
-                  } else {
-                    setStep(3);
-                  }
-                }}
-                className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-base py-3.5 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center"
-              >
-                {t.journoContinueBtn}
-              </button>
-            </div>
-          )}
-
-          {/* ══════════════════════════════════════════
-              STEP 3: LOCATION
-             ══════════════════════════════════════════ */}
-          {step === 3 && (
             <div className="animate-in fade-in duration-200">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight leading-tight">
                 {t.journoLocTitle}
@@ -408,7 +404,7 @@ export default function Home() {
                 type="button"
                 onClick={handleUseMyLocation}
                 disabled={isLocating}
-                className="w-full min-h-[52px] rounded-2xl border-2 border-neutral-300 bg-neutral-50 hover:bg-neutral-100 text-neutral-900 font-bold text-base py-3 px-4 transition active:scale-[0.99] flex items-center justify-center gap-2 mb-4"
+                className="w-full min-h-[52px] rounded-2xl border-2 border-neutral-300 bg-neutral-50 hover:bg-neutral-100 text-neutral-900 font-bold text-base py-3 px-4 transition active:scale-[0.99] flex items-center justify-center gap-2 mb-4 cursor-pointer"
               >
                 {isLocating ? (
                   <>
@@ -478,8 +474,8 @@ export default function Home() {
               {/* Black Pill Next Button */}
               <button
                 type="button"
-                onClick={() => setStep(4)}
-                className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-base py-3.5 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center"
+                onClick={() => setStep(3)}
+                className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-base py-3.5 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center cursor-pointer"
               >
                 {t.journoContinueBtn}
               </button>
@@ -487,9 +483,9 @@ export default function Home() {
           )}
 
           {/* ══════════════════════════════════════════
-              STEP 4: CROP SELECTION (ONLY 5 VERIFIED CROPS)
+              STEP 3: CROP SELECTION (MAHA & YALA DROPDOWNS)
              ══════════════════════════════════════════ */}
-          {step === 4 && (
+          {step === 3 && (
             <div className="animate-in fade-in duration-200">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight leading-tight">
                 {t.journoCropTitle}
@@ -498,52 +494,64 @@ export default function Home() {
                 {t.journoCropSubtitle}
               </p>
 
-              {/* Crop Picker List */}
-              <div className="space-y-2.5 mb-8">
-                {CROP_IDS.map((cId) => {
-                  const cropName = t.crops[cId] || CROPS[cId].name;
-                  const isSelected = selectedCrop === cId;
-                  const icon =
-                    cId === "rice"
-                      ? "🌾"
-                      : cId === "green_gram"
-                      ? "🌱"
-                      : cId === "cowpea"
-                      ? "🥜"
-                      : cId === "black_gram"
-                      ? "🌿"
-                      : "🌽";
+              <div className="space-y-5 mb-8">
+                {/* Maha Crop Dropdown */}
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="mahaCropSelect"
+                    className="block text-xs font-bold text-neutral-800 uppercase tracking-wider"
+                  >
+                    🌧️ {t.journoInMahaLabel}
+                  </label>
+                  <select
+                    id="mahaCropSelect"
+                    value={mahaCrop}
+                    onChange={(e) => handleMahaChange(e.target.value as typeof CROP_IDS[number])}
+                    className="w-full min-h-[52px] rounded-2xl border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-bold text-neutral-900 focus:border-black focus:outline-hidden"
+                  >
+                    {CROP_IDS.map((cId) => (
+                      <option key={cId} value={cId}>
+                        {CROP_ICONS[cId]} {t.crops[cId] || CROPS[cId].name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                  return (
-                    <button
-                      key={cId}
-                      type="button"
-                      onClick={() => setSelectedCrop(cId)}
-                      className={`w-full min-h-[54px] p-3.5 rounded-2xl border-2 flex items-center justify-between text-left transition-all active:scale-[0.99] ${
-                        isSelected
-                          ? "border-black bg-neutral-50 font-bold text-neutral-900 shadow-2xs"
-                          : "border-neutral-200 hover:border-neutral-300 bg-white font-medium text-neutral-700"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{icon}</span>
-                        <span className="text-base">{cropName}</span>
-                      </div>
-                      {isSelected && (
-                        <span className="w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
-                          ✓
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                {/* Yala Crop Dropdown */}
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="yalaCropSelect"
+                    className="block text-xs font-bold text-neutral-800 uppercase tracking-wider"
+                  >
+                    ☀️ {t.journoInYalaLabel}
+                  </label>
+                  <select
+                    id="yalaCropSelect"
+                    value={yalaCrop}
+                    onChange={(e) => handleYalaChange(e.target.value as typeof CROP_IDS[number])}
+                    className="w-full min-h-[52px] rounded-2xl border-2 border-neutral-300 bg-white px-4 py-3 text-sm font-bold text-neutral-900 focus:border-black focus:outline-hidden"
+                  >
+                    {CROP_IDS.map((cId) => (
+                      <option key={cId} value={cId}>
+                        {CROP_ICONS[cId]} {t.crops[cId] || CROPS[cId].name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Single crop assumption info chip */}
+                {isSingleCrop && (
+                  <div className="rounded-xl bg-neutral-100 p-3 text-xs text-neutral-600 leading-relaxed border border-neutral-200/60">
+                    ℹ️ {t.journoSingleCropAssumption}
+                  </div>
+                )}
               </div>
 
               {/* Black Pill Next Button */}
               <button
                 type="button"
-                onClick={() => setStep(5)}
-                className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-base py-3.5 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center"
+                onClick={() => setStep(4)}
+                className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-base py-3.5 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center cursor-pointer"
               >
                 {t.journoContinueBtn}
               </button>
@@ -551,9 +559,9 @@ export default function Home() {
           )}
 
           {/* ══════════════════════════════════════════
-              STEP 5: RESULT SCREEN ("Rain-supported window")
+              STEP 4: RESULT SCREEN ("Rain-supported window" & See More)
              ══════════════════════════════════════════ */}
-          {step === 5 && (
+          {step === 4 && (
             <div className="animate-in fade-in duration-200">
               {/* Outside Sri Lanka Guard */}
               {isOutsideSriLanka ? (
@@ -567,8 +575,8 @@ export default function Home() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setStep(3)}
-                    className="mt-2 min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-semibold px-6 py-3 transition active:scale-[0.98] inline-flex items-center gap-1.5"
+                    onClick={() => setStep(2)}
+                    className="mt-2 min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white text-xs font-semibold px-6 py-3 transition active:scale-[0.98] inline-flex items-center gap-1.5 cursor-pointer"
                   >
                     <span>{t.journoBackBtn}</span>
                   </button>
@@ -583,16 +591,44 @@ export default function Home() {
                   )}
 
                   {/* Header */}
-                  <div className="mb-4">
+                  <div className="mb-3">
                     <span className="inline-block px-3 py-1 rounded-full bg-neutral-100 text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
                       {t.journoStrongestSeason}
                     </span>
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight leading-tight">
                       {t.journoRainHeader}
                     </h1>
-                    <p className="text-xs text-neutral-400 font-medium mt-0.5">
-                      {locationName} · {t.crops[selectedCrop] || CROPS[selectedCrop].name}
+                    <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                      {locationName} · {displayActiveSeasonName}
                     </p>
+                  </div>
+
+                  {/* Season Switcher Tabs */}
+                  <div className="flex rounded-2xl bg-neutral-100 p-1 mb-4 text-xs font-bold text-neutral-700">
+                    <button
+                      type="button"
+                      onClick={() => setActiveSeason("maha")}
+                      className={`flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        activeSeason === "maha"
+                          ? "bg-white text-black shadow-xs font-extrabold"
+                          : "hover:text-black"
+                      }`}
+                    >
+                      <span>🌧️ {t.journoMahaSeasonLabel}:</span>
+                      <span>{t.crops[mahaCrop] || CROPS[mahaCrop].name}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSeason("yala")}
+                      className={`flex-1 py-2.5 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        activeSeason === "yala"
+                          ? "bg-white text-black shadow-xs font-extrabold"
+                          : "hover:text-black"
+                      }`}
+                    >
+                      <span>☀️ {t.journoYalaSeasonLabel}:</span>
+                      <span>{t.crops[yalaCrop] || CROPS[yalaCrop].name}</span>
+                    </button>
                   </div>
 
                   {/* NASA Loading State */}
@@ -613,9 +649,9 @@ export default function Home() {
                   <div className="rounded-2xl bg-neutral-900 text-white p-5 my-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                        {displaySeasonName}
+                        {displayActiveSeasonName} ({t.crops[activeCrop] || CROPS[activeCrop].name})
                       </span>
-                      {strongest.isUnverifiedWaterNeed && (
+                      {activeWindow.isUnverifiedWaterNeed && (
                         <span className="rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 border border-amber-500/30">
                           {t.partialBadge}
                         </span>
@@ -624,7 +660,7 @@ export default function Home() {
 
                     {/* Big Number / Unverified Data Display */}
                     <div>
-                      {strongest.isUnverifiedWaterNeed ? (
+                      {activeWindow.isUnverifiedWaterNeed ? (
                         <div className="space-y-1">
                           <div className="text-lg sm:text-xl font-bold text-white leading-snug">
                             {t.noRainfallDataForCrop}
@@ -636,10 +672,10 @@ export default function Home() {
                       ) : (
                         <div className="space-y-1">
                           <div className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-                            {coveragePercent}%
+                            {activeCoveragePercent}%
                           </div>
                           <p className="text-xs sm:text-sm font-medium text-neutral-300">
-                            {t.waterCoveragePlain(coveragePercent ?? 0)}
+                            {t.waterCoveragePlain(activeCoveragePercent ?? 0)}
                           </p>
                         </div>
                       )}
@@ -648,7 +684,7 @@ export default function Home() {
                     {/* Simple Sowing Timing Line (Month range only) */}
                     <div className="pt-3 border-t border-neutral-800 flex items-center justify-between text-xs">
                       <span className="font-semibold text-white">
-                        {t.sowAround(getSowingMonthRange(selectedCrop, strongest.seasonId, lang))}
+                        {t.sowAround(getSowingMonthRange(activeCrop, activeSeason, lang))}
                       </span>
                     </div>
 
@@ -658,39 +694,66 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {/* Honesty Items */}
-                  <div className="space-y-2 mb-6">
-                    {/* Rice cross-basis note */}
-                    {selectedCrop === "rice" && (
-                      <p className="text-[11px] text-neutral-500 bg-neutral-100 p-2.5 rounded-xl leading-relaxed">
-                        {t.journoCrossBasisNote}
-                      </p>
-                    )}
+                  {/* Seasonal Climate & Soil Moisture Indicators Card */}
+                  <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-3 mb-4 shadow-2xs">
+                    <div className="flex items-center justify-between text-xs font-bold text-neutral-800 uppercase tracking-wider">
+                      <span>📊 {t.journoClimateIndicatorsTitle}</span>
+                      <span className="text-[10px] text-neutral-400 font-normal">NASA POWER (11-Year)</span>
+                    </div>
 
-                    {/* General Disclaimer */}
-                    <p className="text-[11px] text-neutral-400 leading-relaxed text-center">
-                      {t.journoHonestyAdvice}
-                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {/* Soil Wetness Indicator */}
+                      <div className="rounded-xl bg-neutral-50 p-2.5 border border-neutral-100">
+                        <span className="text-[11px] font-semibold text-neutral-500 block">
+                          💧 {t.journoSoilWetnessLabel}
+                        </span>
+                        <div className="mt-1 font-extrabold text-neutral-900 text-sm">
+                          Maha: {climateData?.seasonalSummary.mahaAvgSoilWetness ?? "0.60"}
+                          <span className="text-[10px] text-neutral-400 font-normal"> / 1.0</span>
+                        </div>
+                        <div className="text-[10px] text-neutral-500 mt-0.5">
+                          Yala: {climateData?.seasonalSummary.yalaAvgSoilWetness ?? "0.38"} / 1.0
+                        </div>
+                      </div>
+
+                      {/* Temperature Indicator */}
+                      <div className="rounded-xl bg-neutral-50 p-2.5 border border-neutral-100">
+                        <span className="text-[11px] font-semibold text-neutral-500 block">
+                          🌡️ {t.journoAvgTempLabel}
+                        </span>
+                        <div className="mt-1 font-extrabold text-neutral-900 text-sm">
+                          Maha: {climateData?.seasonalSummary.mahaAvgTempC ?? "27"}°C
+                        </div>
+                        <div className="text-[10px] text-neutral-500 mt-0.5">
+                          Yala: {climateData?.seasonalSummary.yalaAvgTempC ?? "29"}°C
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
+                  {/* Honesty Advice */}
+                  <p className="text-[11px] text-neutral-400 leading-relaxed text-center mb-4">
+                    {t.journoHonestyAdvice}
+                  </p>
+
                   {/* Action Buttons */}
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {/* See More Toggle Button */}
                     <button
                       type="button"
                       onClick={() => setShowSeeMore((prev) => !prev)}
-                      className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-sm py-3 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-1.5"
+                      className="w-full min-h-[48px] rounded-full bg-black hover:bg-neutral-800 text-white font-semibold text-sm py-3 px-6 shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span>{showSeeMore ? t.journoSeeMoreCloseBtn : t.journoSeeMoreBtn}</span>
                       <span>{showSeeMore ? "↑" : "↓"}</span>
                     </button>
 
-                    {/* Expanded "See more" Fact Sheet & Forecast Section */}
+                    {/* Expanded "See more" Fact Sheet & 3-Strategy Comparison */}
                     {showSeeMore && (
-                      <div className="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4 space-y-3 animate-in fade-in duration-200 mt-2">
-                        {/* Supplementary Meteomatics Forecast Line (hidden if API fails or no data) */}
+                      <div className="rounded-3xl border border-neutral-200 bg-neutral-50/70 p-4 space-y-4 animate-in fade-in duration-200 mt-2">
+                        {/* Supplementary Meteomatics Forecast Line */}
                         {meteoForecast && (
-                          <div className="rounded-xl border border-neutral-200 bg-white p-3.5 space-y-1.5 shadow-2xs">
+                          <div className="rounded-2xl border border-neutral-200 bg-white p-3.5 space-y-1.5 shadow-2xs">
                             <div className="flex items-center justify-between text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
                               <span>🌧️ {t.journoForecastTitle}</span>
                               {meteoForecast.updatedAtSriLanka && (
@@ -720,48 +783,209 @@ export default function Home() {
                           </div>
                         )}
 
-                        {/* Both Seasons Rainfall Breakdown (Contains class/week sowing details) */}
-                        <div className="rounded-xl border border-neutral-200 bg-white p-3.5 space-y-2 text-xs">
+                        {/* Seasonal Sowing Windows Card */}
+                        <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-2.5 text-xs shadow-2xs">
                           <div className="font-bold text-neutral-800 uppercase tracking-wider text-[11px]">
-                            Seasonal Sowing Windows ({t.crops[selectedCrop] || CROPS[selectedCrop].name})
+                            {t.journoSeasonalSowingWindows}
                           </div>
 
-                          {/* Maha */}
+                          {/* Maha Sowing Timing */}
                           <div className="flex items-center justify-between py-1.5 border-b border-neutral-100 gap-2">
                             <div>
-                              <span className="font-bold text-neutral-900 block">Maha Season</span>
+                              <span className="font-bold text-neutral-900 block">
+                                {t.journoMahaSeasonLabel} ({t.crops[mahaCrop] || CROPS[mahaCrop].name})
+                              </span>
                               <span className="text-neutral-500 text-[11px] block">
-                                Sowing: ~{windowAnalysis.maha.sowingStartDay}{" "}
-                                {windowAnalysis.maha.sowingStartMonth === 10
-                                  ? "Oct"
-                                  : windowAnalysis.maha.sowingStartMonth === 11
-                                  ? "Nov"
-                                  : "Apr"}{" "}
-                                <span className="text-neutral-600 font-medium">({windowAnalysis.maha.sowingTimingText})</span>
+                                {t.journoSowingLabel} ~{mahaWindow.sowingStartDay} {t.months[mahaWindow.sowingStartMonth] || "Nov"}{" "}
+                                <span className="text-neutral-600 font-medium">({mahaWindow.sowingTimingText})</span>
                               </span>
                             </div>
                             <span className="font-extrabold text-neutral-900 text-right shrink-0">
-                              {windowAnalysis.maha.waterCoverageRatio !== null
-                                ? `${Math.round(windowAnalysis.maha.waterCoverageRatio * 100)}%`
-                                : `~${windowAnalysis.maha.windowRainfallMm ?? "—"} mm`}
+                              {mahaWindow.waterCoverageRatio !== null
+                                ? `${Math.round(mahaWindow.waterCoverageRatio * 100)}%`
+                                : `~${mahaWindow.windowRainfallMm ?? "—"} mm`}
                             </span>
                           </div>
 
-                          {/* Yala */}
+                          {/* Yala Sowing Timing */}
                           <div className="flex items-center justify-between py-1.5 gap-2">
                             <div>
-                              <span className="font-bold text-neutral-900 block">Yala Season</span>
+                              <span className="font-bold text-neutral-900 block">
+                                {t.journoYalaSeasonLabel} ({t.crops[yalaCrop] || CROPS[yalaCrop].name})
+                              </span>
                               <span className="text-neutral-500 text-[11px] block">
-                                Sowing: ~{windowAnalysis.yala.sowingStartDay} Apr{" "}
-                                <span className="text-neutral-600 font-medium">({windowAnalysis.yala.sowingTimingText})</span>
+                                {t.journoSowingLabel} ~{yalaWindow.sowingStartDay} {t.months[4] || "Apr"}{" "}
+                                <span className="text-neutral-600 font-medium">({yalaWindow.sowingTimingText})</span>
                               </span>
                             </div>
                             <span className="font-extrabold text-neutral-900 text-right shrink-0">
-                              {windowAnalysis.yala.waterCoverageRatio !== null
-                                ? `${Math.round(windowAnalysis.yala.waterCoverageRatio * 100)}%`
-                                : `~${windowAnalysis.yala.windowRainfallMm ?? "—"} mm`}
+                              {yalaWindow.waterCoverageRatio !== null
+                                ? `${Math.round(yalaWindow.waterCoverageRatio * 100)}%`
+                                : `~${yalaWindow.windowRainfallMm ?? "—"} mm`}
                             </span>
                           </div>
+                        </div>
+
+                        {/* ──────────────────────────────────────────────────────────
+                            THREE-STRATEGY COMPARISON (Strategy A, B, C)
+                           ────────────────────────────────────────────────────────── */}
+                        <div className="space-y-3 pt-1">
+                          <div className="border-b border-neutral-200 pb-2">
+                            <h2 className="text-base font-extrabold text-neutral-900">
+                              {t.journoCompareRotationsTitle}
+                            </h2>
+                            <p className="text-[11px] text-neutral-500 mt-0.5">
+                              {t.journoCompareRotationsSubtitle}
+                            </p>
+                          </div>
+
+                          {evaluations.map((ev) => {
+                            const isStrategyA = ev.id === "A";
+                            const cardTitle =
+                              isStrategyA
+                                ? t.journoStrategyATitle
+                                : ev.id === "B"
+                                ? t.journoStrategyBTitle
+                                : t.journoStrategyCTitle;
+
+                            // Unique crops in this strategy for hazard advice lookups
+                            const uniqueCropIds = Array.from(new Set(ev.steps.map((s) => s.crop.id)));
+                            const hazardAdviceList = CLIMATE_HAZARD_ADVICE.filter((h) =>
+                              uniqueCropIds.includes(h.cropId)
+                            );
+
+                            return (
+                              <div
+                                key={ev.id}
+                                className={`rounded-2xl border bg-white p-4 space-y-3 text-xs shadow-2xs ${
+                                  isStrategyA ? "border-neutral-300 ring-1 ring-neutral-200" : "border-neutral-200"
+                                }`}
+                              >
+                                {/* Card Title & Baseline Badge */}
+                                <div className="flex items-center justify-between">
+                                  <h3 className="font-extrabold text-neutral-900 text-sm">
+                                    {cardTitle}
+                                  </h3>
+                                  {isStrategyA && (
+                                    <span className="rounded-full bg-neutral-100 text-neutral-700 text-[10px] font-bold px-2 py-0.5">
+                                      {t.currentRotationBadge}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Single crop assumption note for Strategy A */}
+                                {isStrategyA && isSingleCrop && (
+                                  <div className="text-[11px] text-neutral-600 bg-neutral-100/90 p-2 rounded-xl border border-neutral-200/50">
+                                    ℹ️ {t.journoSingleCropAssumption}
+                                  </div>
+                                )}
+
+                                {/* 3-Season Timeline */}
+                                <div className="space-y-1">
+                                  <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
+                                    {t.journoTimelineLabel}
+                                  </span>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {ev.steps.map((st, sIdx) => (
+                                      <div key={sIdx} className="flex items-center gap-1">
+                                        <span className="inline-flex items-center gap-1 bg-neutral-100 px-2.5 py-1 rounded-lg text-neutral-800 font-semibold text-xs">
+                                          <span>{CROP_ICONS[st.crop.id] || "🌱"}</span>
+                                          <span>{t.crops[st.crop.id] || st.crop.name}</span>
+                                        </span>
+                                        {sIdx < ev.steps.length - 1 && (
+                                          <span className="text-neutral-400 font-bold">→</span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Seasonal Rainfall Coverage in Words */}
+                                <div className="space-y-1.5 pt-1 border-t border-neutral-100">
+                                  <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
+                                    {t.rainfallSummaryLabel}
+                                  </span>
+                                  <div className="space-y-1.5">
+                                    {ev.steps.map((st, sIdx) => {
+                                      const cropName = t.crops[st.crop.id] || st.crop.name;
+                                      const pct = st.waterCoverageRatio !== null ? Math.round(st.waterCoverageRatio * 100) : null;
+                                      const isUnverified = st.cropWaterNeedMidpointMm === null;
+                                      return (
+                                        <div key={sIdx} className="text-neutral-700 text-[11px] leading-relaxed">
+                                          • {t.journoSeasonRainfallWords(st.seasonName, cropName, st.windowRainfallMm ?? 0, pct)}
+                                          {isUnverified && (
+                                            <span className="ml-1 rounded-md bg-amber-500/15 text-amber-800 text-[10px] font-bold px-1.5 py-0.5">
+                                              {t.partialBadge}
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                {/* Agronomic Risks / Considerations */}
+                                {ev.risks.length > 0 && (
+                                  <div className="space-y-1 pt-1 border-t border-neutral-100">
+                                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
+                                      ⚠️ {t.journoRisksTitle}
+                                    </span>
+                                    <ul className="space-y-1 text-neutral-700 text-[11px]">
+                                      {ev.risks.map((risk, rIdx) => (
+                                        <li key={rIdx}>• {risk}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {/* Data Gaps */}
+                                {ev.dataGaps.length > 0 && (
+                                  <div className="space-y-1 pt-1 border-t border-neutral-100">
+                                    <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block">
+                                      📋 {t.journoDataGapsTitle}
+                                    </span>
+                                    <ul className="space-y-1 text-neutral-600 text-[11px]">
+                                      {ev.dataGaps.map((gap, gIdx) => (
+                                        <li key={gIdx}>• {gap}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {/* Climate Hazard Advice (Book Advice Grounding) */}
+                                {hazardAdviceList.length > 0 && (
+                                  <div className="space-y-1 pt-1 border-t border-neutral-100">
+                                    <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
+                                      📖 {t.climateHazardAdvice}
+                                    </span>
+                                    <div className="space-y-1">
+                                      {hazardAdviceList.slice(0, 3).map((hz, hIdx) => (
+                                        <div key={hIdx} className="text-[11px] text-neutral-700 bg-neutral-50 p-2 rounded-xl">
+                                          <span className="font-bold text-neutral-900">
+                                            {t.crops[hz.cropId] || CROPS[hz.cropId]?.name} ({hz.label}):
+                                          </span>{" "}
+                                          <span>{hz.advice}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {/* Honesty Cross-Basis Note */}
+                          <div className="rounded-xl bg-neutral-100 p-3 text-[11px] text-neutral-600 leading-relaxed">
+                            {t.journoCrossBasisNote}
+                          </div>
+
+                          {/* Full Details in Expert Mode Link */}
+                          <Link
+                            href={`/expert?lat=${lat}&lon=${lon}&maha=${mahaCrop}&yala=${yalaCrop}`}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-900 hover:text-black py-2 cursor-pointer"
+                          >
+                            <span>{t.journoFullDetailsLink}</span>
+                          </Link>
                         </div>
                       </div>
                     )}
@@ -770,11 +994,11 @@ export default function Home() {
               )}
 
               {/* Navigation buttons: Change Crop & Start Over */}
-              <div className="space-y-2 mt-3">
+              <div className="space-y-2 mt-4">
                 <button
                   type="button"
-                  onClick={() => setStep(4)}
-                  className="w-full min-h-[44px] rounded-full border border-neutral-300 hover:bg-neutral-100 text-neutral-800 font-semibold text-xs py-2.5 px-4 transition active:scale-[0.98] flex items-center justify-center"
+                  onClick={() => setStep(3)}
+                  className="w-full min-h-[44px] rounded-full border border-neutral-300 hover:bg-neutral-100 text-neutral-800 font-semibold text-xs py-2.5 px-4 transition active:scale-[0.98] flex items-center justify-center cursor-pointer"
                 >
                   {t.journoChangeCropBtn}
                 </button>
@@ -782,43 +1006,55 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="w-full min-h-[40px] text-neutral-400 hover:text-neutral-700 font-medium text-xs py-2 transition flex items-center justify-center"
+                  className="w-full min-h-[40px] text-neutral-400 hover:text-neutral-700 font-medium text-xs py-2 transition flex items-center justify-center cursor-pointer"
                 >
                   {t.journoStartOverBtn}
                 </button>
+
+                {/* Direct Link to Researcher Mode at the bottom of the result screen */}
+                <Link
+                  href={`/expert?lat=${lat}&lon=${lon}&maha=${mahaCrop}&yala=${yalaCrop}`}
+                  className="w-full min-h-[48px] rounded-2xl bg-neutral-100 hover:bg-neutral-200/80 text-neutral-800 font-bold text-xs py-3 px-4 transition active:scale-[0.98] flex items-center justify-center gap-2 border border-neutral-200/80 cursor-pointer mt-2"
+                >
+                  <span>{t.journoResearcherModeBtn}</span>
+                </Link>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Bottom Footer & Persistent Help Trigger */}
+      {/* Bottom Footer & Persistent AI Chat Trigger */}
       <footer className="max-w-md mx-auto w-full flex items-center justify-between text-xs text-neutral-400 py-2">
         <span>Field Shift · Sri Lanka Dry Zone</span>
         <button
           type="button"
           onClick={() => setIsHelpOpen(true)}
-          className="font-semibold text-neutral-700 hover:text-black transition flex items-center gap-1"
+          className="font-bold text-emerald-800 hover:text-emerald-950 transition flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 cursor-pointer"
         >
-          <span>💬</span>
+          <span>✨</span>
           <span>{t.needHelp}</span>
         </button>
       </footer>
 
-      {/* Help Sheet Modal */}
+      {/* Gemini AI Chat Sheet Modal */}
       <HelpSheet
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
         lang={lang}
-        screenId="rain_supported_window"
+        screenId={
+          step === 1
+            ? "language_step"
+            : step === 2
+            ? "location_step"
+            : step === 3
+            ? "crop_selection_step"
+            : "results_step"
+        }
         staticHelpText={
-          selectedCrop === "rice"
-            ? "Rice water requirement (948–1,232 mm, DOA Mahailluppallama) includes land puddling and standing water. Maha Northeast monsoon rains cover a substantial portion (~74%), whereas Yala requires extensive tank irrigation."
-            : selectedCrop === "green_gram"
-            ? "Green gram water use (228 mm Maha / 270 mm Yala, Annals DOA 2014) is well supported by Maha rains, and is a strong soil-enriching legume alternative."
-            : selectedCrop === "cowpea"
-            ? "Cowpea water use (175–288 mm, Liyanage 1992) is drought tolerant. Sowing in mid-October or mid-April avoids excess vegetative waterlogging."
-            : "Maize and Black Gram water requirements in mm are unverified in reviewed Sri Lanka Dry Zone literature; seasonal rainfall is reported for reference."
+          step === 4
+            ? `Your current rotation is ${CROPS[mahaCrop]?.name} in Maha and ${CROPS[yalaCrop]?.name} in Yala. Maha rainfall covers the seasonal water need well for legumes, whereas rice requires extensive supplemental irrigation in Yala.`
+            : `Select your district or current farm location. Field Shift uses 11 years of NASA satellite observations and the Meteomatics weather model.`
         }
         screenContextText={getScreenContextText()}
       />

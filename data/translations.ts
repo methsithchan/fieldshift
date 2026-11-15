@@ -122,6 +122,32 @@ export interface TranslationStrings {
   noRainfallDataDesc: string;
   sowAround: (range: string) => string;
   waterCoveragePlain: (pct: number) => string;
+  journoInMahaLabel: string;
+  journoInYalaLabel: string;
+  journoSingleCropAssumption: string;
+  journoCompareRotationsTitle: string;
+  journoCompareRotationsSubtitle: string;
+  journoStrategyATitle: string;
+  journoStrategyBTitle: string;
+  journoStrategyCTitle: string;
+  journoTimelineLabel: string;
+  journoSeasonRainfallWords: (season: string, crop: string, rainMm: number, pct: number | null) => string;
+  journoDroughtAdviceTitle: string;
+  journoWetAdviceTitle: string;
+  climateHazardAdvice: string;
+  journoRisksTitle: string;
+  journoDataGapsTitle: string;
+  journoFullDetailsLink: string;
+  journoResearcherModeBtn: string;
+  journoClimateIndicatorsTitle: string;
+  journoSoilWetnessLabel: string;
+  journoAvgTempLabel: string;
+  journoMahaSeasonLabel: string;
+  journoYalaSeasonLabel: string;
+  journoSwitchSeasonPrompt: string;
+  journoSeasonalSowingWindows: string;
+  journoSowingLabel: string;
+  months: Record<number, string>;
 
   // Localized crop names
   crops: Record<string, string>;
@@ -243,6 +269,38 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     noRainfallDataDesc: "Water requirements for this crop are not verified in reviewed Sri Lanka research.",
     sowAround: (range: string) => `Sow around: ${range}`,
     waterCoveragePlain: (pct: number) => `Natural rainfall meets about ${pct}% of seasonal crop water need`,
+    journoInMahaLabel: "In Maha I grow:",
+    journoInYalaLabel: "In Yala I grow:",
+    journoSingleCropAssumption: "Assumption: Same crop grown in both Maha and Yala seasons.",
+    journoCompareRotationsTitle: "Compare Rotations (3 Strategies)",
+    journoCompareRotationsSubtitle: "Explore trade-offs across 3 consecutive seasons. Supports farmers, does not replace local advice.",
+    journoStrategyATitle: "Strategy A: Your Current Rotation (Baseline)",
+    journoStrategyBTitle: "Strategy B: Legume Integration",
+    journoStrategyCTitle: "Strategy C: Diversified Rotation",
+    journoTimelineLabel: "3-Season Timeline:",
+    journoSeasonRainfallWords: (season: string, crop: string, rainMm: number, pct: number | null) =>
+      pct !== null
+        ? `${season} (${crop}): ${rainMm} mm rainfall meets about ${pct}% of seasonal crop water need.`
+        : `${season} (${crop}): ${rainMm} mm rainfall (water requirement not assessed).`,
+    journoDroughtAdviceTitle: "Book Drought Advice",
+    journoWetAdviceTitle: "Book Excess Wet Advice",
+    climateHazardAdvice: "Climate Hazard Advice (the crop recommendations book)",
+    journoRisksTitle: "Agronomic Considerations",
+    journoDataGapsTitle: "Data Gaps",
+    journoFullDetailsLink: "Full details & scientific charts in Expert Mode →",
+    journoResearcherModeBtn: "🔬 Switch to Researcher Mode",
+    journoClimateIndicatorsTitle: "Seasonal Climate & Soil Indicators",
+    journoSoilWetnessLabel: "Root-Zone Soil Wetness",
+    journoAvgTempLabel: "Average Temperature",
+    journoMahaSeasonLabel: "Maha Season",
+    journoYalaSeasonLabel: "Yala Season",
+    journoSwitchSeasonPrompt: "View Season:",
+    journoSeasonalSowingWindows: "Seasonal Sowing Windows",
+    journoSowingLabel: "Sowing:",
+    months: {
+      1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
+      7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec",
+    },
 
     crops: {
       rice: "Rice (Paddy)",
@@ -368,6 +426,38 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     noRainfallDataDesc: "ශ්‍රී ලංකා පර්යේෂණ ලේඛනවල ජල අවශ්‍යතාවය තහවුරු කර නොමැත.",
     sowAround: (range: string) => `වපුරන කාලය: ${range}`,
     waterCoveragePlain: (pct: number) => `ස්වාභාවික වැසි ජලයෙන් සෘතුමය ජල අවශ්‍යතාවයෙන් ${pct}% ක් පමණ ආවරණය වේ`,
+    journoInMahaLabel: "මහ කන්නයේදී මා වගා කරන්නේ:",
+    journoInYalaLabel: "යල කන්නයේදී මා වගා කරන්නේ:",
+    journoSingleCropAssumption: "උපකල්පනය: මහ සහ යල කන්න දෙකෙහිම එකම බෝගය වගා කෙරේ.",
+    journoCompareRotationsTitle: "බෝග භ්‍රමණ 3 ක් සංසන්දනය",
+    journoCompareRotationsSubtitle: "කන්න 3 ක් පුරා විකල්ප සසඳයි. ගොවීන්ට මඟපෙන්වීමක් පමණි, දේශීය උපදෙස් වෙනුවට නොවේ.",
+    journoStrategyATitle: "ක්‍රමෝපාය A: ඔබේ වත්මන් භ්‍රමණය (මූලික)",
+    journoStrategyBTitle: "ක්‍රමෝපාය B: රනිල බෝග ඒකාබද්ධ කිරීම",
+    journoStrategyCTitle: "ක්‍රමෝපාය C: විවිධාංගීකෘත බෝග රටාව",
+    journoTimelineLabel: "කන්න 3 ක කාලරේඛාව:",
+    journoSeasonRainfallWords: (season: string, crop: string, rainMm: number, pct: number | null) =>
+      pct !== null
+        ? `${season} (${crop}): මි.මී. ${rainMm} ක වර්ෂාපතනයෙන් බෝග ජල අවශ්‍යතාවයෙන් ${pct}% ක් පමණ ආවරණය වේ.`
+        : `${season} (${crop}): මි.මී. ${rainMm} ක වර්ෂාපතනය (ජල අවශ්‍යතාවය තහවුරු කර නොමැත).`,
+    journoDroughtAdviceTitle: "පොතේ නියඟ උපදෙස්",
+    journoWetAdviceTitle: "පොතේ අධික වැසි උපදෙස්",
+    climateHazardAdvice: "දේශගුණික ආපදා කළමනාකරණය (බෝග නිර්දේශ පොත)",
+    journoRisksTitle: "කෘෂිකාර්මික සටහන්",
+    journoDataGapsTitle: "දත්ත හිඩැස්",
+    journoFullDetailsLink: "විශේෂඥ දත්ත සහ සවිස්තර ප්‍රස්ථාර බලන්න →",
+    journoResearcherModeBtn: "🔬 පර්යේෂක මාදිලියට මාරුවන්න",
+    journoClimateIndicatorsTitle: "දේශගුණික හා පස් තෙතමනය දර්ශක",
+    journoSoilWetnessLabel: "මුල් කලාපයේ පස් තෙතමනය",
+    journoAvgTempLabel: "සාමාන්‍ය උෂ්ණත්වය",
+    journoMahaSeasonLabel: "මහ කන්නය",
+    journoYalaSeasonLabel: "යල කන්නය",
+    journoSwitchSeasonPrompt: "කන්නය තෝරන්න:",
+    journoSeasonalSowingWindows: "කන්න අනුව බෝග වපුරන කාලසීමාවන්",
+    journoSowingLabel: "වපුරන කාලය:",
+    months: {
+      1: "ජන", 2: "පෙබ", 3: "මාර්තු", 4: "අප්‍රේල්", 5: "මැයි", 6: "ජූනි",
+      7: "ජූලි", 8: "අගෝ", 9: "සැප්", 10: "ඔක්", 11: "නොවැ", 12: "දෙසැ",
+    },
 
     crops: {
       rice: "වී (Paddy)",
@@ -493,6 +583,38 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     noRainfallDataDesc: "ஆய்வு செய்யப்பட்ட இலங்கை ஆவணங்களில் நீர் தேவை சரிபார்க்கப்படவில்லை.",
     sowAround: (range: string) => `விதைப்பு காலம்: ${range}`,
     waterCoveragePlain: (pct: number) => `இயற்கை மழை பருவ பயிர் நீர் தேவையில் சுமார் ${pct}% ஐ பூர்த்தி செய்கிறது`,
+    journoInMahaLabel: "பெரும்போகத்தில் நான் பயிரிடுவது:",
+    journoInYalaLabel: "சிறுபோகத்தில் நான் பயிரிடுவது:",
+    journoSingleCropAssumption: "அனுமானம்: பெரும்போகம் மற்றும் சிறுபோகம் இரண்டிலும் ஒரே பயிர் பயிரிடப்படுகிறது.",
+    journoCompareRotationsTitle: "பயிர் சுழற்சி ஒப்பீடு (3 திட்டங்கள்)",
+    journoCompareRotationsSubtitle: "3 பருவ சுழற்சிகளை ஒப்பிடுகிறது. விவசாயிகளுக்கான வழிகாட்டல் மட்டுமே, உள்ளூர் ஆலோசனைக்கு மாற்றாகாது.",
+    journoStrategyATitle: "திட்டம் A: உங்கள் தற்போதைய முறை (அடிப்படை)",
+    journoStrategyBTitle: "திட்டம் B: பயறு வகை பயிர் ஒருங்கிணைப்பு",
+    journoStrategyCTitle: "திட்டம் C: பன்முகப்படுத்தப்பட்ட முறை",
+    journoTimelineLabel: "3 பருவ காலவரிசை:",
+    journoSeasonRainfallWords: (season: string, crop: string, rainMm: number, pct: number | null) =>
+      pct !== null
+        ? `${season} (${crop}): ${rainMm} மிமீ மழை பருவ பயிர் நீர் தேவையில் சுமார் ${pct}% ஐ பூர்த்தி செய்கிறது.`
+        : `${season} (${crop}): ${rainMm} மிமீ மழை (நீர் தேவை கணக்கிடப்படவில்லை).`,
+    journoDroughtAdviceTitle: "நூலின் வறட்சி ஆலோசனை",
+    journoWetAdviceTitle: "நூலின் அதிக மழை ஆலோசனை",
+    climateHazardAdvice: "காலநிலை ஆபத்து ஆலோசனை (பயிர் பரிந்துரை நூல்)",
+    journoRisksTitle: "விவசாய இடர்கள் மற்றும் குறிப்புகள்",
+    journoDataGapsTitle: "தரவு இடைவெளிகள்",
+    journoFullDetailsLink: "முழு விவரங்கள் மற்றும் வரைபடங்கள் (நிபுணர் பயன்முறை) →",
+    journoResearcherModeBtn: "🔬 ஆராய்ச்சியாளர் பயன்முறைக்கு மாறுக",
+    journoClimateIndicatorsTitle: "பருவகால காலநிலை மற்றும் மண் குறிகாட்டிகள்",
+    journoSoilWetnessLabel: "வேர் வலய மண் ஈரப்பதம்",
+    journoAvgTempLabel: "சராசரி வெப்பநிலை",
+    journoMahaSeasonLabel: "பெரும்போகம்",
+    journoYalaSeasonLabel: "சிறுபோகம்",
+    journoSwitchSeasonPrompt: "பருவத்தைத் தேர்வுசெய்க:",
+    journoSeasonalSowingWindows: "பருவகால விதைப்பு காலங்கள்",
+    journoSowingLabel: "விதைப்பு காலம்:",
+    months: {
+      1: "ஜன", 2: "பிப்", 3: "மார்ச்", 4: "ஏப்", 5: "மே", 6: "ஜூன்",
+      7: "ஜூலை", 8: "ஆக", 9: "செப்", 10: "அக்", 11: "நவ", 12: "டிச",
+    },
 
     crops: {
       rice: "நெல் (Paddy)",
