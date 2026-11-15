@@ -711,232 +711,194 @@ export default function FarmerWizard() {
 
             {/* SCREEN 5: RESULTS */}
             {step === 5 && (
-              <section className="space-y-6 animate-in fade-in">
+              <section className="space-y-4 animate-in fade-in">
                 {/* Header */}
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {t.resultsTitle}
-                  </h2>
-                  <p className="mt-1 text-sm text-gray-600">
-                    {t.resultsSubtitle}
-                  </p>
+                  <h2 className="text-xl font-bold text-gray-900">{t.resultsTitle}</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{locationName}</p>
                 </div>
 
                 {climateLoading && (
-                  <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-600">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent mb-3" />
-                    <p className="font-semibold text-gray-800">Loading NASA satellite rainfall observations...</p>
-                    <p className="text-xs text-gray-500 mt-1">11-year Point Climatology for {lat}°N, {lon}°E</p>
+                  <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center text-gray-600">
+                    <div className="inline-block h-7 w-7 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent mb-2" />
+                    <p className="text-sm font-semibold text-gray-700">Loading rainfall data…</p>
                   </div>
                 )}
 
                 {climateError && (
-                  <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-900">
-                    <p className="font-bold">NASA POWER Data Notice:</p>
-                    <p className="text-sm mt-1">{climateError}</p>
-                    <p className="text-xs text-rose-700 mt-2">Showing rotation options with standard seasonal indicators.</p>
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                    ⚠️ Rainfall data unavailable — showing estimates.
                   </div>
                 )}
 
-                {/* THREE PLAIN-LANGUAGE CARDS */}
-                <div className="space-y-5">
+                {/* COMPACT VISUAL CARDS */}
+                <div className="space-y-3">
                   {evaluations.map((evalItem) => {
                     const isA = evalItem.id === "A";
                     const isB = evalItem.id === "B";
-                    const isC = evalItem.id === "C";
 
-                    // Title & badge
                     const title = isA ? t.strategyATitle : isB ? t.strategyBTitle : t.strategyCTitle;
                     const badge = isA ? t.currentRotationBadge : isB ? t.legumeAltBadge : t.diversifiedAltBadge;
                     const isPartial = evalItem.scores.rainfallCoverageStatus === "partial";
 
-                    // Format steps sequence
-                    const stepsString = evalItem.steps
-                      .map((s) => t.crops[s.crop.id] || s.crop.name)
-                      .join("  →  ");
+                    // Crop sequence as pills
+                    const cropPills = evalItem.steps.map((s) => t.crops[s.crop.id] || s.crop.name);
 
-                    // Plain-language rainfall sentence
-                    const rainfallSummary = evalItem.steps
-                      .map((s) => {
-                        const cName = t.crops[s.crop.id] || s.crop.name;
-                        if (s.waterCoverageRatio !== null && s.windowRainfallMm !== null) {
-                          const pct = Math.round(s.waterCoverageRatio * 100);
-                          return `${s.seasonName} (${cName}): NASA rainfall ${s.windowRainfallMm.toFixed(0)} mm covers ${pct}% of seasonal water need.`;
-                        }
-                        return `${s.seasonName} (${cName}): Water requirement unverified in Dry Zone publications.`;
-                      })
-                      .join(" ");
+                    // Rainfall bars per season step
+                    const rainfallBars = evalItem.steps.map((s) => {
+                      const pct = s.waterCoverageRatio !== null ? Math.min(Math.round(s.waterCoverageRatio * 100), 100) : null;
+                      const color =
+                        pct === null ? "bg-gray-300" :
+                        pct >= 80 ? "bg-emerald-500" :
+                        pct >= 50 ? "bg-amber-400" :
+                        "bg-rose-500";
+                      const label =
+                        pct === null ? "?" :
+                        pct >= 80 ? "✓ Good" :
+                        pct >= 50 ? "~ Partial" :
+                        "✗ Low";
+                      const labelColor =
+                        pct === null ? "text-gray-500" :
+                        pct >= 80 ? "text-emerald-700" :
+                        pct >= 50 ? "text-amber-700" :
+                        "text-rose-700";
+                      return { pct, color, label, labelColor, seasonName: s.seasonName, cropName: t.crops[s.crop.id] || s.crop.name };
+                    });
+
+                    // Unique crops for hazard tips
+                    const uniqueCrops = Array.from(new Set(evalItem.steps.map((s) => s.crop)));
+
+                    // Top risks — first 2 only, stripped short
+                    const topRisks = evalItem.risks.slice(0, 2);
 
                     return (
                       <div
                         key={evalItem.id}
-                        className={`rounded-2xl border-2 p-5 shadow-sm transition-all ${
+                        className={`rounded-2xl border-2 overflow-hidden shadow-sm ${
                           isB
-                            ? "border-emerald-500 bg-white ring-2 ring-emerald-500/10"
-                            : "border-gray-200 bg-white"
+                            ? "border-emerald-500"
+                            : "border-gray-200"
                         }`}
                       >
-                        {/* Header badge & title */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
+                        {/* Card colour strip header */}
+                        <div className={`px-4 py-3 flex items-center justify-between ${
+                          isA ? "bg-gray-100" : isB ? "bg-emerald-600" : "bg-blue-600"
+                        }`}>
                           <div>
-                            <span
-                              className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${
-                                isA
-                                  ? "bg-gray-100 text-gray-800"
-                                  : isB
-                                  ? "bg-emerald-100 text-emerald-900"
-                                  : "bg-blue-100 text-blue-900"
-                              }`}
-                            >
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${isA ? "text-gray-500" : "text-white/80"}`}>
                               {badge}
                             </span>
-                            <h3 className="text-lg font-bold text-gray-900 mt-1">
+                            <h3 className={`text-base font-bold leading-tight mt-0.5 ${isA ? "text-gray-900" : "text-white"}`}>
                               {title}
                             </h3>
                           </div>
-
-                          {/* Score or Partial badge */}
-                          <div className="text-right">
-                            {isPartial ? (
-                              <span className="inline-block rounded-md bg-amber-100 px-2 py-1 text-xs font-bold text-amber-900">
-                                {t.partialBadge}
+                          {/* Score ring */}
+                          {!isPartial && evalItem.scores.compositeScore !== null && (
+                            <div className={`flex flex-col items-center rounded-xl px-3 py-1 ${isA ? "bg-white" : "bg-white/20"}`}>
+                              <span className={`text-[10px] font-semibold ${isA ? "text-gray-500" : "text-white/80"}`}>Score</span>
+                              <span className={`text-xl font-extrabold leading-none ${isA ? "text-gray-900" : "text-white"}`}>
+                                {(evalItem.scores.compositeScore * 100).toFixed(0)}
                               </span>
-                            ) : evalItem.scores.compositeScore !== null ? (
-                              <div className="rounded-lg bg-emerald-50 px-3 py-1 text-right">
-                                <span className="text-xs font-semibold text-emerald-700 block">Overall Score</span>
-                                <span className="text-lg font-extrabold text-emerald-950">
-                                  {(evalItem.scores.compositeScore * 100).toFixed(0)}/100
-                                </span>
-                              </div>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        {/* Crop Sequence */}
-                        <div className="my-3 rounded-xl bg-gray-50 p-3 text-sm font-semibold text-gray-800 flex items-center gap-2">
-                          <span>🔄</span>
-                          <span>{stepsString}</span>
-                        </div>
-
-                        {/* Rainfall Summary */}
-                        <div className="space-y-1 my-3 text-xs leading-relaxed text-gray-700">
-                          <span className="font-bold text-gray-900 block flex items-center gap-1">
-                            <span>💧</span> {t.rainfallSummaryLabel}:
-                          </span>
-                          <p className="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100">
-                            {rainfallSummary}
-                          </p>
-                        </div>
-
-                        {/* Historic Reference Budgets (Informational only) */}
-                        <div className="my-3 rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-700 space-y-1">
-                          <div className="font-bold text-slate-900 flex flex-wrap items-center justify-between gap-1">
-                            <span>💰 Historic Reference Budget:</span>
-                            <span className="text-[10px] text-amber-700 font-medium">not current prices, not comparable across crops</span>
-                          </div>
-                          <div className="space-y-1.5 mt-1 text-[11px] text-slate-600">
-                            {Array.from(new Set(evalItem.steps.map((s) => s.crop))).map((crop) => {
-                              const budgets = HISTORIC_REFERENCE_BUDGETS.filter((b) => b.cropId === crop.id);
-                              if (budgets.length === 0) return null;
-                              const cName = t.crops[crop.id] || crop.name;
-                              return (
-                                <div key={crop.id}>
-                                  <span className="font-semibold text-slate-900">{cName}:</span>{" "}
-                                  {budgets
-                                    .map(
-                                      (b) =>
-                                        `${b.scenario} (${b.priceYear} price year: ~Rs ${b.totalCostRsPerAcre.toLocaleString()}/ac cost, yield ${b.yieldPerAcre}, net Rs ${b.netProfitRsPerAcre.toLocaleString()}/ac; source: the crop recommendations book, p. ${b.sourcePage})`
-                                    )
-                                    .join(" | ")}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Climate Hazard Advice */}
-                        <div className="my-3 rounded-xl bg-amber-50/40 border border-amber-200/80 p-3 text-xs text-slate-800 space-y-1.5">
-                          <div className="font-bold text-amber-950 flex items-center gap-1.5">
-                            <span>🌦️</span>
-                            <span>Climate Hazard Advice (the crop recommendations book):</span>
-                          </div>
-                          <div className="space-y-2 text-[11px] leading-relaxed">
-                            {Array.from(new Set(evalItem.steps.map((s) => s.crop))).map((crop) => {
-                              const hazards = CLIMATE_HAZARD_ADVICE.filter((h) => h.cropId === crop.id);
-                              if (hazards.length === 0) return null;
-                              const cName = t.crops[crop.id] || crop.name;
-                              const dry = hazards.find((h) => h.hazard === "drought");
-                              const wet = hazards.find((h) => h.hazard === "excess_rain");
-                              return (
-                                <div key={crop.id} className="border-b border-amber-100 pb-1.5 last:border-0 last:pb-0">
-                                  <div className="font-semibold text-slate-900">{cName}</div>
-                                  {dry && (
-                                    <div className="text-amber-900 mt-0.5">
-                                      <span className="font-medium text-amber-800">If it is dry:</span> {dry.advice}{" "}
-                                      <span className="text-amber-700 text-[10px]">(source: the crop recommendations book, p. {dry.sourcePage})</span>
-                                    </div>
-                                  )}
-                                  {wet && (
-                                    <div className="text-blue-900 mt-0.5">
-                                      <span className="font-medium text-blue-800">If it is very wet:</span> {wet.advice}{" "}
-                                      <span className="text-blue-700 text-[10px]">(source: the crop recommendations book, p. {wet.sourcePage})</span>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Risks and Considerations */}
-                        <div className="mt-3 space-y-1 text-xs leading-relaxed">
-                          <span className="font-bold text-gray-900 block flex items-center gap-1">
-                            <span>⚠️</span> {t.keyRisksLabel}:
-                          </span>
-                          {evalItem.risks.length > 0 ? (
-                            <ul className="list-disc pl-5 text-gray-700 space-y-1">
-                              {evalItem.risks.map((risk, idx) => (
-                                <li key={idx}>{risk}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-gray-500 italic pl-1">{t.noRisksIdentified}</p>
+                              <span className={`text-[10px] ${isA ? "text-gray-400" : "text-white/60"}`}>/100</span>
+                            </div>
+                          )}
+                          {isPartial && (
+                            <span className="rounded-lg bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-800">
+                              {t.partialBadge}
+                            </span>
                           )}
                         </div>
 
-                        {/* Data Gaps */}
-                        {evalItem.dataGaps.length > 0 && (
-                          <div className="mt-3 rounded-lg bg-amber-50/60 p-2.5 text-xs text-amber-950 border border-amber-100 space-y-1">
-                            <span className="font-bold block flex items-center gap-1 text-amber-900">
-                              <span>ℹ️</span> {t.dataGapsLabel}:
-                            </span>
-                            <ul className="list-disc pl-5 space-y-0.5">
-                              {evalItem.dataGaps.map((gap, idx) => (
-                                <li key={idx}>{gap}</li>
-                              ))}
-                            </ul>
+                        <div className="bg-white px-4 py-3 space-y-3">
+                          {/* Crop sequence pills */}
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {cropPills.map((name, i) => (
+                              <span key={i} className="flex items-center gap-1">
+                                <span className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-bold text-emerald-900">
+                                  {name}
+                                </span>
+                                {i < cropPills.length - 1 && (
+                                  <span className="text-gray-400 text-sm font-bold">→</span>
+                                )}
+                              </span>
+                            ))}
                           </div>
-                        )}
+
+                          {/* Rainfall bars */}
+                          <div className="space-y-1.5">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                              💧 {t.rainfallSummaryLabel}
+                            </div>
+                            {rainfallBars.map((bar, i) => (
+                              <div key={i}>
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-xs font-medium text-gray-600">{bar.seasonName} · {bar.cropName}</span>
+                                  <span className={`text-xs font-bold ${bar.labelColor}`}>
+                                    {bar.label}{bar.pct !== null ? ` (${bar.pct}%)` : ""}
+                                  </span>
+                                </div>
+                                <div className="h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${bar.color}`}
+                                    style={{ width: `${bar.pct ?? 0}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Climate tips — icon + 1 line each */}
+                          {uniqueCrops.some((crop) => CLIMATE_HAZARD_ADVICE.some((h) => h.cropId === crop.id)) && (
+                            <div className="rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 space-y-1">
+                              {uniqueCrops.map((crop) => {
+                                const hazards = CLIMATE_HAZARD_ADVICE.filter((h) => h.cropId === crop.id);
+                                if (hazards.length === 0) return null;
+                                const dry = hazards.find((h) => h.hazard === "drought");
+                                const wet = hazards.find((h) => h.hazard === "excess_rain");
+                                return (
+                                  <div key={crop.id} className="space-y-0.5">
+                                    {dry && (
+                                      <p className="text-xs text-amber-800">
+                                        <span className="font-bold">☀️ Dry —</span> {dry.advice}
+                                      </p>
+                                    )}
+                                    {wet && (
+                                      <p className="text-xs text-blue-800">
+                                        <span className="font-bold">🌧️ Wet —</span> {wet.advice}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Risk pills — 2 max */}
+                          {topRisks.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {topRisks.map((risk, idx) => (
+                                <span key={idx} className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2.5 py-0.5 text-[11px] font-semibold text-rose-800">
+                                  ⚠️ {risk.length > 55 ? risk.slice(0, 55) + "…" : risk}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Prominent Link to Expert Details View */}
-                <div className="pt-2">
-                  <Link
-                    href={`/expert?lat=${lat}&lon=${lon}&maha=${currentMahaCrop}&yala=${currentYalaCrop}`}
-                    className="flex min-h-[56px] w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3.5 text-center text-base font-bold text-white shadow-md hover:bg-slate-800 transition-all active:scale-[0.99]"
-                  >
-                    {t.expertDetailsButton}
-                  </Link>
-                  <p className="text-center text-xs text-gray-500 mt-2">
-                    Includes full 11-year NASA monthly rain/temp charts, Leaflet map, interactive Soil Form &amp; agronomic parameters.
-                  </p>
-                </div>
+                {/* Expert Details Link */}
+                <Link
+                  href={`/expert?lat=${lat}&lon=${lon}&maha=${currentMahaCrop}&yala=${currentYalaCrop}`}
+                  className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-slate-800 px-4 py-3 text-sm font-bold text-white shadow hover:bg-slate-900 transition-all active:scale-[0.99]"
+                >
+                  {t.expertDetailsButton}
+                </Link>
 
-                {/* Restart Button */}
-                <div className="flex justify-center pt-2">
+                {/* Restart */}
+                <div className="flex justify-center">
                   <button
                     type="button"
                     onClick={() => { setStep(1); setRole(null); }}
