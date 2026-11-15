@@ -9,6 +9,10 @@ import { buildFarmerScenarios } from "@/lib/engine/farmer-strategies";
 import { evaluateAllScenarios } from "@/lib/engine/rotation";
 import { SoilFormState, PriorityWeights } from "@/lib/types/engine";
 import HelpSheet from "@/components/Wizard/HelpSheet";
+import {
+  CLIMATE_HAZARD_ADVICE,
+  HISTORIC_REFERENCE_BUDGETS,
+} from "@/data/crop_sourcing";
 
 // Default coordinates: Padaviya (~8.83°N, 80.76°E)
 const DEFAULT_PADAVIYA_LAT = 8.83;
@@ -155,7 +159,15 @@ export default function FarmerWizard() {
 
   // Context summary for Help LLM prompt
   const getScreenContextText = (): string => {
-    return `Screen ${step} of 5. Active language: ${lang}. Current location: ${lat}°N, ${lon}°E (${locationName}). Current Maha: ${currentMahaCrop}, Current Yala: ${currentYalaCrop}. Considered crops: ${consideredCrops.join(", ")}. Dry Zone status: ${isOutsideDryZone ? "Outside" : "Inside"}.`;
+    let base = `Screen ${step} of 5. Active language: ${lang}. Current location: ${lat}°N, ${lon}°E (${locationName}). Current Maha: ${currentMahaCrop}, Current Yala: ${currentYalaCrop}. Considered crops: ${consideredCrops.join(", ")}. Dry Zone status: ${isOutsideDryZone ? "Outside" : "Inside"}.`;
+    if (step === 5) {
+      const activeCropIds = Array.from(new Set([currentMahaCrop, currentYalaCrop, ...consideredCrops]));
+      const hazardSnippets = CLIMATE_HAZARD_ADVICE.filter((h) => activeCropIds.includes(h.cropId as typeof CROP_IDS[number]))
+        .map((h) => `${h.cropId} (${h.label}): "${h.advice}" (source: crop book, p. ${h.sourcePage})`)
+        .join("; ");
+      base += ` Results available. Sourced DOA climate hazard advice: ${hazardSnippets}.`;
+    }
+    return base;
   };
 
   return (
@@ -773,6 +785,66 @@ export default function FarmerWizard() {
                       <p className="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100">
                         {rainfallSummary}
                       </p>
+                    </div>
+
+                    {/* Historic Reference Budgets (Informational only) */}
+                    <div className="my-3 rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-700 space-y-1">
+                      <div className="font-bold text-slate-900 flex flex-wrap items-center justify-between gap-1">
+                        <span>💰 Historic Reference Budget:</span>
+                        <span className="text-[10px] text-amber-700 font-medium">not current prices, not comparable across crops</span>
+                      </div>
+                      <div className="space-y-1.5 mt-1 text-[11px] text-slate-600">
+                        {Array.from(new Set(evalItem.steps.map((s) => s.crop))).map((crop) => {
+                          const budgets = HISTORIC_REFERENCE_BUDGETS.filter((b) => b.cropId === crop.id);
+                          if (budgets.length === 0) return null;
+                          const cName = t.crops[crop.id] || crop.name;
+                          return (
+                            <div key={crop.id}>
+                              <span className="font-semibold text-slate-900">{cName}:</span>{" "}
+                              {budgets
+                                .map(
+                                  (b) =>
+                                    `${b.scenario} (${b.priceYear} price year: ~Rs ${b.totalCostRsPerAcre.toLocaleString()}/ac cost, yield ${b.yieldPerAcre}, net Rs ${b.netProfitRsPerAcre.toLocaleString()}/ac; source: crop book, p. ${b.sourcePage})`
+                                )
+                                .join(" | ")}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Climate Hazard Advice (DOA Crop Book) */}
+                    <div className="my-3 rounded-xl bg-amber-50/40 border border-amber-200/80 p-3 text-xs text-slate-800 space-y-1.5">
+                      <div className="font-bold text-amber-950 flex items-center gap-1.5">
+                        <span>🌦️</span>
+                        <span>Climate Hazard Advice (DOA Crop Book):</span>
+                      </div>
+                      <div className="space-y-2 text-[11px] leading-relaxed">
+                        {Array.from(new Set(evalItem.steps.map((s) => s.crop))).map((crop) => {
+                          const hazards = CLIMATE_HAZARD_ADVICE.filter((h) => h.cropId === crop.id);
+                          if (hazards.length === 0) return null;
+                          const cName = t.crops[crop.id] || crop.name;
+                          const dry = hazards.find((h) => h.hazard === "drought");
+                          const wet = hazards.find((h) => h.hazard === "excess_rain");
+                          return (
+                            <div key={crop.id} className="border-b border-amber-100 pb-1.5 last:border-0 last:pb-0">
+                              <div className="font-semibold text-slate-900">{cName}</div>
+                              {dry && (
+                                <div className="text-amber-900 mt-0.5">
+                                  <span className="font-medium text-amber-800">If it is dry:</span> {dry.advice}{" "}
+                                  <span className="text-amber-700 text-[10px]">(source: crop book, p. ${dry.sourcePage})</span>
+                                </div>
+                              )}
+                              {wet && (
+                                <div className="text-blue-900 mt-0.5">
+                                  <span className="font-medium text-blue-800">If it is very wet:</span> {wet.advice}{" "}
+                                  <span className="text-blue-700 text-[10px]">(source: crop book, p. ${wet.sourcePage})</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {/* Risks and Considerations */}

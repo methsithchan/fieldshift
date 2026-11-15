@@ -40,10 +40,10 @@ export const CROPS: Record<string, CropDefinition> = {
     },
 
     maturity: {
-      daysRange: [85, 135],
+      daysRange: [80, 135],
       varietyClasses:
-        "Maturity classes (Illangakoon et al.): ultra-short (<90 days), short (90–99 days, e.g. Bg 352 ~96d), medium (100–109 days), long (110–135 days).",
-      source: "Illangakoon et al.",
+        "Crop Book (DOA Sri Lanka, pp. 1–3) maturity classes: 2.5 mo (80±5 days, e.g. Bg 250, Bg 251 GSR), 3 mo (90±5 days, e.g. Bg 300, At 307, Bg 310), 3.5 mo (105±5 days, e.g. Bg 352, At 362), 4–4.5 mo (120–135±5 days, e.g. Bg 379-2, Bg 455). Range: 80–135 days.",
+      source: "DOA Sri Lanka Crop Book (pp. 1–3)",
       notes: "Maturity duration is reported 1–6 days shorter in Maha than in Yala.",
     },
 
@@ -86,10 +86,11 @@ export const CROPS: Record<string, CropDefinition> = {
     },
 
     maturity: {
-      daysRange: [60, 65],
-      varietyClasses: "Reported growth stages total ~65 days.",
-      source: "Annals of the Sri Lanka Department of Agriculture (2014)",
-      notes: undefined,
+      daysRange: [55, 65],
+      varietyClasses:
+        "DOA Crop Book (p. 8): 60–65 days (MI-5, Ari); 55–60 days (Harsha); 55–58 days (MI-6). Conflict note: spreadsheet lists flat 75 days, whereas Crop Book documents 55–65 days.",
+      source: "DOA Sri Lanka Crop Book (p. 8)",
+      notes: "MI-6 is suited to mid-season crop and recommended as virus-resistant.",
     },
 
     nitrogenFixing: true,
@@ -130,9 +131,10 @@ export const CROPS: Record<string, CropDefinition> = {
     },
 
     maturity: {
-      daysRange: [75, 90],
-      varietyClasses: "Harvest 75–90 days after planting.",
-      source: "DOA RARDC Kilinochchi",
+      daysRange: [55, 90],
+      varietyClasses:
+        "DOA Crop Book (p. 21): 55 days (Waruni); 60–70 days (Dhawala, MICP 1); 65–80 days (MI-35); 75–90 days (Bombay). Conflict note: spreadsheet omitted cowpea durations (blank).",
+      source: "DOA Sri Lanka Crop Book (p. 21)",
       notes: undefined,
     },
 
@@ -175,9 +177,10 @@ export const CROPS: Record<string, CropDefinition> = {
     },
 
     maturity: {
-      daysRange: [80, 90],
-      varietyClasses: "Variety MI-1 matures in 80–90 days.",
-      source: "Secondary copy of Sri Lanka DOA text - unverified primary source",
+      daysRange: [65, 90],
+      varietyClasses:
+        "DOA Crop Book (p. 19): 65–70 days (Anuradha - short duration); 90 days (MI-1). Conflict note: spreadsheet lists flat 90 days for all varieties.",
+      source: "DOA Sri Lanka Crop Book (p. 19)",
       notes: undefined,
     },
 

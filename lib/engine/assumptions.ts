@@ -23,7 +23,17 @@ export const MODEL_ASSUMPTIONS: Record<string, ModelAssumption> = {
     value: 30,
     unit: "days/month",
     description:
-      "Assumes crop water exposure window = full months + proportional share of the last month, using daysToMaturity / 30, starting from the season's first month.",
+      "Assumes crop water exposure window = full months + proportional share of the last month, using daysToMaturity / 30, starting from the crop's approximate sowing window start month in operations_timeline.csv (or April fallback for Rice in Yala).",
+    validationStatus: "unvalidated - heuristic rule",
+  },
+  RICE_YALA_SOWING_WINDOW_ASSUMPTION: {
+    id: "RICE_YALA_SOWING_WINDOW_ASSUMPTION",
+    name: "Rice Yala Sowing Window Fallback",
+    category: "rainfall",
+    value: 4,
+    unit: "start month (April)",
+    description:
+      "Because operations_timeline.csv omits Yala sowing timing for Rice, the model assumes April (start of standard Yala season) as the default sowing window start month.",
     validationStatus: "unvalidated - heuristic rule",
   },
   RAINFALL_COVERAGE_CAP: {

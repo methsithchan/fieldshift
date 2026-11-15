@@ -142,12 +142,11 @@ describe("Rotation Engine — Error Handling for Unknown Crop ID", () => {
 
 describe("Rotation Engine — Rainfall Coverage Calculation", () => {
   it("computes water coverage using fractional growth window (full months + proportional share of last month)", () => {
-    // Green Gram in Yala (starts April, month index 3).
-    // Duration: 60-65 days -> midpoint 62.5 days -> 62.5 / 30 = 2 full months + (2.5 / 30) of 3rd month
-    // Rainfall in mock: Apr (140.5) + May (68.2) + (2.5 / 30) * Jun (15.1)
-    // = 140.5 + 68.2 + 1.2583 = 209.958... -> 210.0 mm
+    // Green Gram in Yala (starts April wk1-2 per operations_timeline.csv, month index 3).
+    // Duration: 55-65 days (Crop Book p. 8) -> midpoint 60 days -> 60 / 30 = 2.0 full months
+    // Rainfall in mock: Apr (140.5) + May (68.2) = 208.7 mm
     // Green gram Yala water need: 270 mm
-    // Expected coverage: min(1.0, 210.0 / 270) = ~0.78
+    // Expected coverage: min(1.0, 208.7 / 270) = ~0.77
     const scenario: RotationScenarioInput = {
       id: "B",
       title: "Green Gram Test",
@@ -160,9 +159,9 @@ describe("Rotation Engine — Rainfall Coverage Calculation", () => {
     };
 
     const result = evaluateScenario(scenario, mockPadaviyaClimate, defaultSoil, defaultWeights);
-    expect(result.scores.rainfallCoverage).toBeCloseTo(0.78, 2);
-    expect(result.steps[0].windowRainfallMm).toBe(210.0);
-    expect(result.steps[0].windowMonthsCount).toBe(2.08);
+    expect(result.scores.rainfallCoverage).toBeCloseTo(0.77, 2);
+    expect(result.steps[0].windowRainfallMm).toBe(208.7);
+    expect(result.steps[0].windowMonthsCount).toBe(2.0);
     expect(result.steps[0].cropWaterNeedMidpointMm).toBe(270);
   });
 
@@ -319,5 +318,27 @@ describe("Rotation Engine — Score Bounds & Determinism", () => {
 
     expect(padaviyaResult.scores.rainfallCoverage).not.toEqual(mahailluppallamaResult.scores.rainfallCoverage);
     expect(mahailluppallamaResult.scores.rainfallCoverage!).toBeGreaterThan(padaviyaResult.scores.rainfallCoverage!);
+  });
+
+  it("applies operations_timeline.csv sowing timings and displays approximate sowing time in evidence text", () => {
+    const strategyB = getDefaultScenarios(["rice", "rice", "rice"])[1]; // Rice -> Green Gram -> Rice
+    const result = evaluateScenario(strategyB, mockPadaviyaClimate, defaultSoil, defaultWeights);
+
+    // Rice Maha: October (source: p. 1)
+    expect(result.steps[0].sowingTiming?.startMonth).toBe(10);
+    expect(result.reasons.some((r) => r.includes("approximate sowing time: Nov (2.5 & 3 mo); 3.5 mo nursery Oct wk3-4"))).toBe(true);
+
+    // Green Gram Yala: April (source: p. 8)
+    expect(result.steps[1].sowingTiming?.startMonth).toBe(4);
+    expect(result.reasons.some((r) => r.includes("approximate sowing time: Apr wk1-2"))).toBe(true);
+  });
+
+  it("includes 'Recommended in Anuradhapura (all zones)' evidence line for listed crops", () => {
+    const strategyC = getDefaultScenarios(["rice", "rice", "rice"])[2]; // Rice -> Cowpea -> Maize
+    const result = evaluateScenario(strategyC, mockPadaviyaClimate, defaultSoil, defaultWeights);
+
+    // Cowpea and Maize are both recommended in Anuradhapura all zones
+    expect(result.reasons.some((r) => r.includes("Cowpea: Recommended in Anuradhapura (all zones)"))).toBe(true);
+    expect(result.reasons.some((r) => r.includes("Maize (Corn): Recommended in Anuradhapura (all zones)"))).toBe(true);
   });
 });

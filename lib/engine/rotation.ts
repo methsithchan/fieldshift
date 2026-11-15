@@ -10,6 +10,10 @@ import { CropDefinition } from "@/lib/types/crops";
 import { CROPS } from "@/data/crops";
 import { CULTIVATION_SEASONS } from "@/data/seasons";
 import { MODEL_ASSUMPTIONS } from "./assumptions";
+import {
+  getCropSowingTiming,
+  ANURADHAPURA_RECOMMENDED_CROPS,
+} from "@/data/crop_sourcing";
 
 /**
  * Normalizes priority slider weights across active (assessed) components.
@@ -115,7 +119,15 @@ export function evaluateScenario(
   evaluatedSteps.forEach((step, idx) => {
     const crop = step.crop;
     const isMaha = step.seasonId === "maha";
-    const startMonthIdx = isMaha ? mahaStartMonthIndex : yalaStartMonthIndex;
+    
+    // Resolve crop sowing timing from operations_timeline.csv (or assumed fallback for Rice in Yala)
+    const sowingTiming = getCropSowingTiming(crop.id, step.seasonId);
+    step.sowingTiming = sowingTiming;
+    const startMonthIdx = (sowingTiming.startMonth - 1) % 12;
+
+    const approxSowingText = sowingTiming.confidence.includes("fallback")
+      ? `approximate sowing time: ${sowingTiming.approxTiming} (assumed fallback - no timing in source, p. ${sowingTiming.sourcePage})`
+      : `approximate sowing time: ${sowingTiming.approxTiming} (source: crop book, p. ${sowingTiming.sourcePage})`;
 
     // Determine maturity days
     const maturityDays = crop.maturity.daysRange
@@ -136,7 +148,7 @@ export function evaluateScenario(
     if (needMidpoint === null) {
       confidenceDeductions += MODEL_ASSUMPTIONS.CONFIDENCE_DEDUCTION_NULL_WATER_NEED.value;
       dataGaps.push(
-        `Season ${idx + 1} (${step.seasonName} ${crop.name}): Water requirement in mm is unverified in reviewed research (null in data/crops.ts); rainfall coverage not assessed.`
+        `Season ${idx + 1} (${step.seasonName} ${crop.name}): ${approxSowingText}. Water requirement in mm is unverified in reviewed research (null in data/crops.ts); rainfall coverage not assessed.`
       );
       step.waterCoverageRatio = null;
       step.windowRainfallMm = null;
@@ -208,7 +220,7 @@ export function evaluateScenario(
         : "crop water use (ET)";
 
     reasons.push(
-      `Season ${idx + 1} (${step.seasonName} ${crop.name}): ${roundedWindowRainfall} mm rain across ${step.windowMonthsCount}-month window (${monthNamesIncluded.join(
+      `Season ${idx + 1} (${step.seasonName} ${crop.name}): ${approxSowingText}. ${roundedWindowRainfall} mm rain across ${step.windowMonthsCount}-month window (${monthNamesIncluded.join(
         "-"
       )}) covers ${(roundedCoverage * 100).toFixed(0)}% of its ${needMidpoint.toFixed(
         0
@@ -221,6 +233,20 @@ export function evaluateScenario(
           roundedCoverage * 100
         ).toFixed(0)}% of requirement; substantial supplementary irrigation or tank water allocation is necessary.`
       );
+    }
+  });
+
+  // 1b. Anuradhapura district recommendations (from districts_zones.csv)
+  const seenRecCrops = new Set<string>();
+  evaluatedSteps.forEach((s) => {
+    if (!seenRecCrops.has(s.crop.id)) {
+      seenRecCrops.add(s.crop.id);
+      const rec = ANURADHAPURA_RECOMMENDED_CROPS[s.crop.id];
+      if (rec && rec.recommended) {
+        reasons.push(
+          `${s.crop.name}: Recommended in Anuradhapura (all zones) (source: crop book, p. ${rec.sourcePage}).`
+        );
+      }
     }
   });
 

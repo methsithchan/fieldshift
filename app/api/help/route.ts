@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { CLIMATE_HAZARD_ADVICE } from "@/data/crop_sourcing";
 
 export const maxDuration = 30;
 
@@ -46,10 +47,15 @@ function buildSystemInstruction(
   const langName =
     language === "si" ? "Sinhala" : language === "ta" ? "Tamil" : "English";
 
+  const hazardGrounding = CLIMATE_HAZARD_ADVICE.map(
+    (h) =>
+      `- ${h.cropId} (${h.label}): "${h.advice}" (source: DOA Crop Book, p. ${h.sourcePage})`
+  ).join("\n");
+
   return [
     `You are a helper inside "Field Shift", a farmer crop-rotation app for Sri Lankan Dry Zone farmers.`,
     `Reply in ${langName}, in 2–4 short plain sentences.`,
-    `Answer ONLY from the provided screen context and results below.`,
+    `Answer ONLY from the provided screen context, hazard grounding, and results below.`,
     `Explain what the screen asks and what the results mean.`,
     `Do NOT give pesticide, fertilizer, dosage, or yield advice or promises.`,
     `For those topics, tell the farmer to ask the local Agrarian Service Centre (ගොවිජන සේවා මධ්‍යස්ථානය / கமநல சேவை மையம்) or the Department of Agriculture.`,
@@ -58,6 +64,9 @@ function buildSystemInstruction(
     ``,
     `Current screen: "${screen}".`,
     `Screen context: ${context}`,
+    ``,
+    `Official DOA Crop Book Climate Hazard Grounding (drought and excess rain advice):`,
+    hazardGrounding,
   ].join("\n");
 }
 

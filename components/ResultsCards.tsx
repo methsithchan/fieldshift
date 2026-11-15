@@ -1,6 +1,10 @@
 "use client";
 
 import { ScenarioEvaluation } from "@/lib/types/engine";
+import {
+  CLIMATE_HAZARD_ADVICE,
+  HISTORIC_REFERENCE_BUDGETS,
+} from "@/data/crop_sourcing";
 
 interface ResultsCardsProps {
   evaluations: [ScenarioEvaluation, ScenarioEvaluation, ScenarioEvaluation];
@@ -172,6 +176,64 @@ export default function ResultsCards({ evaluations }: ResultsCardsProps) {
                   <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-mono text-gray-500">
                     Not assessed (no verified cost data)
                   </span>
+                </div>
+              </div>
+
+              {/* Historic Reference Budgets (Informational only) */}
+              <div className="my-3 rounded-lg bg-slate-50 border border-slate-200 p-2.5 text-xs text-slate-700 space-y-1">
+                <div className="font-semibold text-slate-800 flex items-center justify-between">
+                  <span>Historic Reference Budgets:</span>
+                  <span className="text-[10px] text-amber-700 font-medium">not current prices, not comparable across crops</span>
+                </div>
+                <div className="space-y-1 mt-1 text-[11px]">
+                  {Array.from(new Set(scenario.steps.map((s) => s.crop))).map((crop) => {
+                    const budgets = HISTORIC_REFERENCE_BUDGETS.filter((b) => b.cropId === crop.id);
+                    if (budgets.length === 0) return null;
+                    return (
+                      <div key={crop.id} className="text-slate-600">
+                        <span className="font-medium text-slate-900">{crop.name}:</span>{" "}
+                        {budgets
+                          .map(
+                            (b) =>
+                              `${b.scenario} (${b.priceYear} price year: ~Rs ${b.totalCostRsPerAcre.toLocaleString()}/ac cost, yield ${b.yieldPerAcre}, net Rs ${b.netProfitRsPerAcre.toLocaleString()}/ac; source: crop book, p. ${b.sourcePage})`
+                          )
+                          .join(" | ")}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Climate Hazard Advice (DOA Crop Book) */}
+              <div className="my-3 rounded-lg bg-amber-50/40 border border-amber-200/80 p-2.5 text-xs text-slate-800 space-y-1.5">
+                <div className="font-semibold text-amber-950 flex items-center gap-1.5">
+                  <span>🌦️</span>
+                  <span>Climate Hazard Advice (DOA Crop Book):</span>
+                </div>
+                <div className="space-y-2 text-[11px] leading-relaxed">
+                  {Array.from(new Set(scenario.steps.map((s) => s.crop))).map((crop) => {
+                    const hazards = CLIMATE_HAZARD_ADVICE.filter((h) => h.cropId === crop.id);
+                    if (hazards.length === 0) return null;
+                    const dry = hazards.find((h) => h.hazard === "drought");
+                    const wet = hazards.find((h) => h.hazard === "excess_rain");
+                    return (
+                      <div key={crop.id} className="border-b border-amber-100 pb-1.5 last:border-0 last:pb-0">
+                        <div className="font-semibold text-slate-900">{crop.name}</div>
+                        {dry && (
+                          <div className="text-amber-900 mt-0.5">
+                            <span className="font-medium text-amber-800">If it is dry:</span> {dry.advice}{" "}
+                            <span className="text-amber-700 text-[10px]">(source: crop book, p. {dry.sourcePage})</span>
+                          </div>
+                        )}
+                        {wet && (
+                          <div className="text-blue-900 mt-0.5">
+                            <span className="font-medium text-blue-800">If it is very wet:</span> {wet.advice}{" "}
+                            <span className="text-blue-700 text-[10px]">(source: crop book, p. {wet.sourcePage})</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

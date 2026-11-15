@@ -64,6 +64,12 @@ export interface EvaluatedStep {
   windowMonthsCount: number;
   windowRainfallMm: number | null;
   cropWaterNeedMidpointMm: number | null;
+  sowingTiming?: {
+    approxTiming: string;
+    startMonth: number;
+    sourcePage: number;
+    confidence: string;
+  };
 }
 
 export interface ScenarioEvaluation {
