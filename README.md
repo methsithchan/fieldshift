@@ -146,7 +146,7 @@ Or connect the GitHub repository to Vercel for automatic deploys on push.
 
 ## Team & Credits
 
-- **Methsith Chandrasena and Team** — Developed for the NASA Space Apps Challenge 2026.
+- **Galactic HQ** — Developed for the NASA Space Apps Challenge 2026.
 
 ## License
 
