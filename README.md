@@ -6,11 +6,20 @@ A decision-support tool that uses NASA Earth observations plus local soil inform
 
 ## What It Does
 
-- **Map**: Click to select a farm location (defaults to Padaviya area, ~8.83°N, 80.76°E, Anuradhapura, Sri Lanka; includes approximate Dry Zone boundary check)
-- **NASA Climate Data**: 11 years of daily climate observations from NASA POWER (precipitation, temperature, humidity, root-zone soil wetness)
-- **Charts**: Monthly rainfall totals, temperature trends, and soil moisture patterns
-- **Soil Input**: Enter local soil characteristics (pH, texture, organic carbon, drainage); starts fully unpopulated with source tracking (Measured vs. Estimated)
-- **Rotation Analysis**: Compare 3 crop-rotation scenarios side-by-side with transparent, rule-based scoring and input completeness metrics
+- **Farmer-Friendly Onboarding Wizard (`/`)**: Mobile-first, step-by-step guidance in English, Sinhala (සිංහල), or Tamil (தமிழ்):
+  - Step 1: Language selection (English, Sinhala, Tamil) stored in React state.
+  - Step 2: Farm location via browser GPS ("Use My Location", with a clear privacy notice that no locations are stored) or agricultural district presets (starts at Padaviya, Dry Zone).
+  - Step 3: Current crop baseline for Maha and Yala seasons (forms Strategy A).
+  - Step 4: Alternative crops to consider (dynamically configures Strategies B and C).
+  - Step 5: Three plain-language recommendation cards citing NASA 11-year rainfall numbers, agronomic risks, and data gaps.
+- **Farmer Support Assistant ("Need Help?")**: Floating on-screen help modal on every step:
+  - Pre-written static guidance for each screen in the selected language.
+  - Optional Q&A question box powered by server-side Gemini (`gemini-1.5-flash`). Strictly forbidden from offering pesticide/fertilizer dosage or yield predictions; directs farmers to their local Agrarian Service Centre or Department of Agriculture.
+- **Expert Details View (`/expert`)**:
+  - Full 11-year monthly NASA POWER climate charts (rainfall, temperature, root-zone soil wetness).
+  - Interactive Leaflet map with Dry Zone bounding box and inland presets.
+  - Interactive Soil Form with source tracking (Measured vs. Estimated).
+  - Priority weight sliders and detailed heuristic score breakdowns.
 
 ## ⚠️ Important Disclaimer
 
@@ -34,10 +43,25 @@ In alignment with the challenge criteria, this tool explicitly highlights uncert
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **Map**: [Leaflet](https://leafletjs.com/) via [React Leaflet](https://react-leaflet.js.org/)
 - **Charts**: [Recharts](https://recharts.org/)
+- **AI Help Assistant**: Google Gemini API via Google AI Studio (`gemini-1.5-flash`)
 - **Testing**: [Vitest](https://vitest.dev/)
 - **Deployment**: [Vercel](https://vercel.com/)
 
-No database. No authentication. No LLM calls. No IoT.
+No database. No user accounts. No IoT devices.
+
+## Environment Variables
+
+For the optional farmer Q&A help sheet, add a `.env.local` file (this file is ignored by Git in `.gitignore` and is never committed or sent to the client):
+
+```bash
+# Google AI Studio API Key (server-side only)
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-1.5-flash
+```
+
+> **Google AI Studio Free Tier Specifications for `gemini-1.5-flash`:**
+> - Rate limits: 15 Requests Per Minute (RPM), 1,000,000 Tokens Per Minute (TPM), 1,500 Requests Per Day (RPD).
+> - If `GEMINI_API_KEY` is not provided or fails, the Help Sheet automatically falls back to static pre-written expert guidance in the farmer's selected language.
 
 ## Data Sources
 
@@ -85,21 +109,29 @@ Or connect the GitHub repository to Vercel for automatic deploys on push.
 
 ```
 ├── app/                    # Next.js App Router pages & API routes
-│   ├── api/nasa-power/     # POWER proxy route handler (maxDuration = 60s)
+│   ├── api/
+│   │   ├── help/           # Server-side Gemini help route (rate-limited, sanitized)
+│   │   └── nasa-power/     # NASA POWER proxy handler (maxDuration = 60s)
+│   ├── expert/             # Expert details view (map, charts, soil form)
 │   ├── layout.tsx          # Root layout with footer & team credits
-│   └── page.tsx            # Main application page
-├── components/             # React components (Map, SoilForm, ResultsCards, Charts, Sliders)
-│   └── Charts/             # Recharts visualization components
+│   └── page.tsx            # Farmer onboarding wizard (Steps 1–5)
+├── components/             # React components
+│   ├── Wizard/             # Farmer wizard components (HelpSheet)
+│   ├── Charts/             # Recharts visualization components
+│   ├── Map.tsx             # Interactive Leaflet map
+│   ├── SoilForm.tsx        # Soil input form with atomic state updates
+│   └── ResultsCards.tsx    # Scenario evaluation cards
 ├── lib/
-│   ├── types/              # TypeScript type definitions (engine, crops, NASA)
+│   ├── types/              # TypeScript definitions (engine, crops, NASA)
 │   ├── hooks/              # React hooks (useNasaData)
-│   ├── engine/             # Rotation scoring engine & transparent heuristics
+│   ├── engine/             # Rotation scoring engine, farmer strategies & heuristics
 │   └── utils/              # Data processing & climatology utilities
 ├── data/
-│   ├── crops.ts            # Crop characteristic data (sourced, not agronomist-validated)
-│   └── seasons.ts          # Cultivation calendar definitions (FAO report cc3682en)
+│   ├── crops.ts            # Crop characteristic catalog (sourced, not agronomist-validated)
+│   ├── seasons.ts          # Cultivation calendar definitions (FAO report cc3682en)
+│   └── translations.ts     # Multilingual UI strings & static help (en, si, ta)
 ├── scripts/                # Live evaluation & climatology verification scripts
-├── __tests__/              # Unit tests (Vitest)
+├── __tests__/              # Unit tests (Vitest: rotation, soil form, farmer strategies)
 ├── TODO.md                 # Unverified / placeholder items tracker
 ├── LICENSE                 # MIT License
 └── README.md

@@ -15,6 +15,7 @@ Last updated: Phase 4 (Pre-Phase 5 Audit & Heuristics Polish)
 - [ ] **Rice water basis vs. Legume basis**: Rice water values (948–1,232 mm; DOA/RRDI Mahailluppallama) measure *total requirement* (including land preparation and percolation), whereas Green Gram (228/270 mm; Annals SL DOA 2014) and Cowpea (175–288 mm; Liyanage 1992) measure *crop water use* only. The engine compares each crop solely to its own requirement and never across bases.
 - [x] **Coastal cell distortion**: Documented in UI and README. Coastal points mix land and marine models in NASA POWER; presets use inland stations (e.g., Mahailluppallama, Medawachchiya, Polonnaruwa).
 - [x] **License**: MIT License added.
+- [ ] **Sinhala & Tamil Translations Review**: Farmer-friendly UI strings in `data/translations.ts` and local crop names (e.g. paddy වී/நெல், mung bean මුං ඇට/பாசிப்பயறு, cowpea කවුපි/தட்டப்பயறு, black gram උළුඳු/உளுந்து, maize බඩඉරිඟු/மக்காச்சோளம்) need formal review by native Sri Lankan agricultural extension officers to verify dialectal terminology across farming districts.
 
 ## 🟡 Model Assumptions (Not Validated by an Agronomist)
 
