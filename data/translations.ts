@@ -149,6 +149,25 @@ export interface TranslationStrings {
   journoSowingLabel: string;
   months: Record<number, string>;
 
+  // Step 3 & 4 Redesign
+  journoSelectCropsTitle: string;
+  journoSelectCropsSubtitle: string;
+  journoSelectAtLeastOne: string;
+  journoSowingTimeTitle: string;
+  journoSowingTimeSubtitle: string;
+  journoMahaSeasonGroup: string;
+  journoYalaSeasonGroup: string;
+  sowPeriodOct: string;
+  sowPeriodNov: string;
+  sowPeriodDec: string;
+  sowPeriodApr: string;
+  sowPeriodMay: string;
+  journoBestCropHeroTitle: string;
+  journoTopMatchBadge: string;
+  journoOtherCropsRankedTitle: string;
+  journoRankLabel: (rank: number) => string;
+  cropVerdicts: Record<string, { maha: string; yala: string }>;
+
   // Localized crop names
   crops: Record<string, string>;
 }
@@ -300,6 +319,46 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     months: {
       1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
       7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec",
+    },
+
+    // Step 3 & 4 Redesign
+    journoSelectCropsTitle: "What crops can you grow?",
+    journoSelectCropsSubtitle: "Tick all the crops you can or want to cultivate",
+    journoSelectAtLeastOne: "Select at least 1 crop to continue",
+    journoSowingTimeTitle: "When do you plan to sow?",
+    journoSowingTimeSubtitle: "Select your expected sowing period or month",
+    journoMahaSeasonGroup: "Maha Season (Main Monsoon Rains)",
+    journoYalaSeasonGroup: "Yala Season (Minor / Dry Season Rains)",
+    sowPeriodOct: "October (Early Maha)",
+    sowPeriodNov: "November (Peak Maha Rains)",
+    sowPeriodDec: "December (Late Maha)",
+    sowPeriodApr: "March – April (Early Yala)",
+    sowPeriodMay: "May (Late Yala)",
+    journoBestCropHeroTitle: "Best Crop for Your Sowing Window",
+    journoTopMatchBadge: "⭐️ TOP MATCH",
+    journoOtherCropsRankedTitle: "Other crops you selected (Ranked)",
+    journoRankLabel: (rank: number) => `Rank #${rank}`,
+    cropVerdicts: {
+      rice: {
+        maha: "Best match for wet lowlands: Maha rains meet ~74% of water need and rice tolerates seasonal waterlogging.",
+        yala: "Highest risk / irrigation needed: Natural rainfall covers only ~26% of water need; strictly requires heavy irrigation.",
+      },
+      green_gram: {
+        maha: "Good rainfall fit, but high excess-water risk: Needs well-drained soil as roots suffer if fields become waterlogged.",
+        yala: "Excellent Yala fit: Short 60–70 day cycle and ~83% rain coverage allow it to mature before dry spells.",
+      },
+      cowpea: {
+        maha: "Strong rainfall coverage, but sensitive to prolonged soil saturation during peak monsoon downpours.",
+        yala: "Top drought-resilient pick: Deep taproots and high water efficiency achieve near 100% rain coverage in Yala.",
+      },
+      black_gram: {
+        maha: "Traditional rainfed champion: Highly tolerant to heavy soils, though official water requirement data is unverified.",
+        yala: "Moderate dry-season tolerance, but unverified water data and lower yield than cowpea under severe moisture stress.",
+      },
+      maize: {
+        maha: "High yield potential in well-drained uplands when sown early; unverified water need and vulnerable to flooding.",
+        yala: "High moisture deficit risk: High water demand during flowering creates severe yield risk during Yala dry spells.",
+      },
     },
 
     crops: {
@@ -459,6 +518,46 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
       7: "ජූලි", 8: "අගෝ", 9: "සැප්", 10: "ඔක්", 11: "නොවැ", 12: "දෙසැ",
     },
 
+    // Step 3 & 4 Redesign
+    journoSelectCropsTitle: "ඔබට වගා කළ හැකි බෝග මොනවාද?",
+    journoSelectCropsSubtitle: "ඔබට වගා කළ හැකි සියලුම බෝග ටික් කරන්න",
+    journoSelectAtLeastOne: "ඉදිරියට යාමට අවම වශයෙන් එක් බෝගයක් තෝරන්න",
+    journoSowingTimeTitle: "ඔබ වගා කිරීමට බලාපොරොත්තු වන්නේ කවදාද?",
+    journoSowingTimeSubtitle: "බලාපොරොත්තු වන වපුරන මාසය හෝ කාලසීමාව තෝරන්න",
+    journoMahaSeasonGroup: "මහ කන්නය (ප්‍රධාන මෝසම් වැසි)",
+    journoYalaSeasonGroup: "යල කන්නය (සුළු වැසි / වියළි කන්නය)",
+    sowPeriodOct: "ඔක්තෝබර් (මුල් මහ)",
+    sowPeriodNov: "නොවැම්බර් (උච්ච මහ වැසි)",
+    sowPeriodDec: "දෙසැම්බර් (අග මහ)",
+    sowPeriodApr: "මාර්තු – අප්‍රේල් (මුල් යල)",
+    sowPeriodMay: "මැයි (අග යල)",
+    journoBestCropHeroTitle: "ඔබේ වැසි කාලයට වඩාත්ම සුදුසු බෝගය",
+    journoTopMatchBadge: "⭐️ ඉහළම ගැළපීම",
+    journoOtherCropsRankedTitle: "ඔබ තෝරාගත් අනෙකුත් බෝග (ශ්‍රේණිගතව)",
+    journoRankLabel: (rank: number) => `ශ්‍රේණිය #${rank}`,
+    cropVerdicts: {
+      rice: {
+        maha: "පහත් බිම් සඳහා වඩාත්ම සුදුසුයි: මහ වැස්සෙන් ජල අවශ්‍යතාවයෙන් 74% ක් ආවරණය වන අතර ජලය රැඳීමට ඔරොත්තු දෙයි.",
+        yala: "අධික අවදානම් / වාරි ජලය අත්‍යවශ්‍යයි: යල වැස්සෙන් ලැබෙන්නේ ජල අවශ්‍යතාවයෙන් 26% ක් පමණි; පූර්ණ වාරිමාර්ග අවශ්‍යයි.",
+      },
+      green_gram: {
+        maha: "වැසි ආවරණය ඉහළයි, නමුත් අධික ජලයෙන් හානි විය හැක: මුල් කුණු වීම වැළැක්වීමට හොඳින් ජලය බැස යන බිම් අවශ්‍ය වේ.",
+        yala: "යල කන්නයට ඉතා උචිතයි: දින 60–70 කෙටි කාලීන බෝගයක් වන අතර 83% ක වැසි ආවරණයකින් නියඟයට පෙර අස්වනු නෙළා ගත හැක.",
+      },
+      cowpea: {
+        maha: "වැසි ආවරණය ප්‍රමාණවත්ය, නමුත් මහ කන්නයේ අධික වැසි කාලවලදී පසෙහි ජලය රැඳීමට සංවේදීය.",
+        yala: "නියඟයට ඔරොත්තු දෙන හොඳම තේරීම: ගැඹුරු මුල් පද්ධතිය සහ ඉහළ ජල කාර්යක්ෂමතාව නිසා යල වැස්සෙන් 100% කට ආසන්න ආවරණයක් ලැබේ.",
+      },
+      black_gram: {
+        maha: "සාම්ප්‍රදායික වැසි පෝෂිත බෝගය: වියළි කලාපයේ බර පස්වලට හොඳින් ගැළපේ, නමුත් නිල ජල පරිභෝජන දත්ත තහවුරු කර නොමැත.",
+        yala: "මධ්‍යස්ථ නියං ඔරොත්තු දීමක් ඇත, නමුත් ජල දත්ත තහවුරු කර නොමැති අතර දැඩි නියඟයේදී අස්වැන්න අඩු විය හැක.",
+      },
+      maize: {
+        maha: "මුල් කාලයේ වැපිරුවහොත් ගොඩ ඉඩම්වල ඉහළ අස්වැන්නක් ලබා දෙයි; ජල අවශ්‍යතාවය තහවුරු කර නොමැති අතර ජලය පිරීමට ඔරොත්තු නොදේ.",
+        yala: "වියළි කන්නයේ අවදානම වැඩියි: කරල් හටගන්නා කාලයේ වැඩි ජල ප්‍රමාණයක් අවශ්‍ය වන බැවින් යල නියඟයේදී අස්වැන්න පාඩු විය හැක.",
+      },
+    },
+
     crops: {
       rice: "වී (Paddy)",
       green_gram: "මුං ඇට (Green Gram)",
@@ -614,6 +713,46 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationStrings> = {
     months: {
       1: "ஜன", 2: "பிப்", 3: "மார்ச்", 4: "ஏப்", 5: "மே", 6: "ஜூன்",
       7: "ஜூலை", 8: "ஆக", 9: "செப்", 10: "அக்", 11: "நவ", 12: "டிச",
+    },
+
+    // Step 3 & 4 Redesign
+    journoSelectCropsTitle: "நீங்கள் எந்த பயிர்களை பயிரிடலாம்?",
+    journoSelectCropsSubtitle: "நீங்கள் பயிரிடக்கூடிய அனைத்துப் பயிர்களையும் தெரிவுசெய்க",
+    journoSelectAtLeastOne: "தொடர குறைந்தது 1 பயிரையாவது தெரிவு செய்க",
+    journoSowingTimeTitle: "நீங்கள் எப்போது விதைக்கத் திட்டமிடுகிறீர்கள்?",
+    journoSowingTimeSubtitle: "எதிர்பார்க்கும் விதைப்பு மாதம் அல்லது காலத்தைத் தெரிவுசெய்க",
+    journoMahaSeasonGroup: "பெரும்போகம் (முக்கிய பருவமழை)",
+    journoYalaSeasonGroup: "சிறுபோகம் (குறைந்த மழைக்காலம் / கோடை)",
+    sowPeriodOct: "அக்டோபர் (ஆரம்ப பெரும்போகம்)",
+    sowPeriodNov: "நவம்பர் (உச்ச பெரும்போகம்)",
+    sowPeriodDec: "டிசம்பர் (பிந்தைய பெரும்போகம்)",
+    sowPeriodApr: "மார்ச் – ஏப்ரல் (ஆரம்ப சிறுபோகம்)",
+    sowPeriodMay: "மே (பிந்தைய சிறுபோகம்)",
+    journoBestCropHeroTitle: "உங்கள் விதைப்பு காலத்திற்கு மிகவும் பொருத்தமான பயிர்",
+    journoTopMatchBadge: "⭐️ சிறந்த பொருத்தம்",
+    journoOtherCropsRankedTitle: "நீங்கள் தெரிவுசெய்த மற்ற பயிர்கள் (வரிசைப்படுத்தப்பட்டது)",
+    journoRankLabel: (rank: number) => `வரிசை #${rank}`,
+    cropVerdicts: {
+      rice: {
+        maha: "பள்ளத்தாக்கு நிலங்களுக்கு மிகவும் சிறந்தது: பெரும்போக மழை 74% நீர் தேவையைப் பூர்த்தி செய்கிறது மற்றும் நீர் தேங்குவதைத் தாங்கும்.",
+        yala: "அதிக ஆபத்து / நீர்ப்பாசனம் அவசியம்: சிறுபோக மழை 26% நீர் தேவையை மட்டுமே பூர்த்தி செய்கிறது; அதிக நீர்ப்பாசனம் தேவை.",
+      },
+      green_gram: {
+        maha: "நல்ல மழைப் பொருத்தம், ஆனால் அதிக நீரினால் பாதிப்பு: நீர் தேங்காத வடிகால் வசதியுள்ள நிலம் அவசியம்.",
+        yala: "சிறுபோகத்திற்கு மிகச் சிறந்தது: 60-70 நாள் குறுகிய பயிர் மற்றும் 83% மழை பாதுகாப்புடன் வறட்சிக்கு முன் அறுவடை செய்யலாம்.",
+      },
+      cowpea: {
+        maha: "போதுமான மழை பாதுகாப்பு, ஆனால் பெரும்போக கடும் மழையில் நீர் தேங்குவதை தாங்காது.",
+        yala: "வறட்சியைத் தாங்கும் சிறந்த தெரிவு: ஆழமான வேர்கள் மற்றும் அதிக நீர் பயன்பாட்டுத் திறன் மூலம் சிறுபோக மழையில் 100% பூர்த்தி பெறுகிறது.",
+      },
+      black_gram: {
+        maha: "பாரம்பரிய மானாவாரிப் பயிர்: கனத்த மண்ணுக்கு ஏற்றது, ஆனால் உத்தியோகபூர்வ நீர் தேவை தரவு சரிபார்க்கப்படவில்லை.",
+        yala: "மிதமான வறட்சித் தாங்குதிறன், ஆனால் நீர் தரவு இல்லை மற்றும் கடுமையான வறட்சியில் குறைவான விளைச்சல்.",
+      },
+      maize: {
+        maha: "ஆரம்பத்தில் விதைத்தால் மேட்டு நிலங்களில் அதிக விளைச்சல் தரும்; நீர் தேவை சரிபார்க்கப்படவில்லை மற்றும் வெள்ளத்திற்கு உணர்திறன் கொண்டது.",
+        yala: "வறண்ட காலத்தில் அதிக ஆபத்து: பூக்கும் காலத்தில் அதிக நீர் தேவைப்படுவதால் சிறுபோக வறட்சியில் விளைச்சல் இழப்பு ஏற்படலாம்.",
+      },
     },
 
     crops: {
